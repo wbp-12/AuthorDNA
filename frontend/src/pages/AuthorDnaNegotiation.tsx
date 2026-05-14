@@ -136,6 +136,17 @@ function applySuggestionAcceptance(draftText: string, suggestion: Suggestion, va
   };
 }
 
+function rebuildDocumentText(appliedSuggestionVariations: Record<string, string>) {
+  return suggestions.reduce((currentText, suggestion) => {
+    const variation = appliedSuggestionVariations[suggestion.id]
+    if (!variation) {
+      return currentText
+    }
+
+    return applySuggestionAcceptance(currentText, suggestion, variation).text
+  }, sampleText)
+}
+
 function renderFlaggedText(text: string, flaggedTokens: string[]) {
   return text.split(new RegExp(`(${flaggedTokens.map(escapeRegExp).join("|")})`, "g")).map((part, i) => {
     const flagged = flaggedTokens.includes(part);
@@ -278,6 +289,8 @@ export default function InfluenceDashboard() {
   const [refinePrompt, setRefinePrompt] = useState("");
   const [refineVariationSets, setRefineVariationSets] = useState<Record<string, string[][]>>({});
   const [refineVariationIndex, setRefineVariationIndex] = useState<Record<string, number>>({});
+  const [acceptedRefineVariationBySuggestion, setAcceptedRefineVariationBySuggestion] = useState<Record<string, string>>({});
+  const appliedSuggestionVariationsById = useRef<Record<string, string>>({});
   const [showBreakdown, setShowBreakdown] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedSuggestionId, setSelectedSuggestionId] = useState<string | null>(null);
@@ -359,10 +372,19 @@ export default function InfluenceDashboard() {
     }
 
     const applied = applySuggestionAcceptance(documentText, suggestion, variation);
-    setDocumentText(applied.text);
+    const nextAppliedSuggestions = {
+      ...appliedSuggestionVariationsById.current,
+      [suggestionId]: variation,
+    };
+    appliedSuggestionVariationsById.current = nextAppliedSuggestions;
+    setDocumentText(rebuildDocumentText(nextAppliedSuggestions));
     setResolved((current) => ({
       ...current,
       [suggestionId]: "accept",
+    }));
+    setAcceptedRefineVariationBySuggestion((current) => ({
+      ...current,
+      [suggestionId]: variation,
     }));
     setSelectedSuggestionId(null);
 
@@ -373,6 +395,35 @@ export default function InfluenceDashboard() {
         token: Date.now(),
       });
     }
+  };
+
+  const handleUndoSuggestion = (suggestionId: string) => {
+    const suggestion = suggestions.find((item) => item.id === suggestionId);
+    if (!suggestion) {
+      return;
+    }
+
+    const nextAppliedSuggestions = { ...appliedSuggestionVariationsById.current };
+    delete nextAppliedSuggestions[suggestionId];
+    appliedSuggestionVariationsById.current = nextAppliedSuggestions;
+    setDocumentText(rebuildDocumentText(nextAppliedSuggestions));
+    setAcceptedHighlight({
+      text: suggestion.targetText,
+      color: getCategoryColor(suggestion.category).soft,
+      token: Date.now(),
+    });
+    setResolved((current) => {
+      const next = { ...current };
+      delete next[suggestionId];
+      return next;
+    });
+    setAcceptedRefineVariationBySuggestion((current) => {
+      const next = { ...current };
+      delete next[suggestionId];
+      return next;
+    });
+    setSelectedSuggestionId(null);
+    setActiveRefineId((current) => (current === suggestionId ? null : current));
   };
 
   return (
@@ -653,9 +704,19 @@ export default function InfluenceDashboard() {
                         {s.category}
                       </span>
                       {state && (
-                        <span className="ml-auto text-[10px] text-ink-muted">
-                          {state === "accept" ? "Accepted" : "Dismissed"}
-                        </span>
+                        <div className="ml-auto flex items-center gap-2 text-[10px] font-medium text-ink-muted">
+                          <span>
+                            {state === "accept" ? "Accepted" : "Dismissed"}
+                          </span>
+                          <span>|</span>
+                          <button
+                            type="button"
+                            onClick={() => handleUndoSuggestion(s.id)}
+                            className="transition hover:text-ink"
+                          >
+                            Undo
+                          </button>
+                        </div>
                       )}
                     </div>
                     <p className="mb-2 line-clamp-2 text-xs italic text-ink-muted">"{s.excerpt}"</p>
@@ -783,13 +844,33 @@ export default function InfluenceDashboard() {
                                       {variation}
                                     </p>
                                   </div>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleAcceptVariation(s.id, variation)}
-                                    className="shrink-0 rounded-md border border-border bg-background px-3 py-1.5 text-xs text-ink transition hover:bg-paper"
-                                  >
-                                    Accept
-                                  </button>
+                                  {acceptedRefineVariationBySuggestion[s.id] ? (
+                                    <button
+                                      type="button"
+                                      disabled
+                                      className="relative shrink-0 rounded-md border border-border bg-background px-3 py-1.5 text-xs text-ink"
+                                      aria-label={
+                                        acceptedRefineVariationBySuggestion[s.id] === variation
+                                          ? "Accepted variation"
+                                          : "Rejected variation"
+                                      }
+                                    >
+                                      <span className="invisible">Accept</span>
+                                      {acceptedRefineVariationBySuggestion[s.id] === variation ? (
+                                        <Check className="absolute inset-0 m-auto h-3.5 w-3.5" />
+                                      ) : (
+                                        <X className="absolute inset-0 m-auto h-3.5 w-3.5" />
+                                      )}
+                                    </button>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleAcceptVariation(s.id, variation)}
+                                      className="shrink-0 rounded-md border border-border bg-background px-3 py-1.5 text-xs text-ink transition hover:bg-paper"
+                                    >
+                                      Accept
+                                    </button>
+                                  )}
                                 </div>
                               ))}
                             </div>

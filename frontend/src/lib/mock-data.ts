@@ -91,23 +91,6 @@ export const metrics: MetricCategory[] = [
 
 export const suggestions = [
   {
-    id: "s1",
-    category: "Structure",
-    severity: "high",
-    excerpt: "The discussion is no longer only about whether AI should be used...",
-    paragraphIndex: 1,
-    targetText:
-      "The discussion is no longer only about whether AI should be used. It is about how it should be used, where its limits should be drawn, and how writers can preserve clarity, ownership, and voice while still benefiting from the speed it offers.",
-    observation:
-      "You usually develop supporting ideas before arriving at the final takeaway. Here, the piece introduces a conclusion-like paragraph before the earlier points have been fully established.",
-    tradeoff: {
-      gain: "A conclusion that follows the supporting arguments.",
-      loss: "Slightly less front-loaded emphasis.",
-    },
-    proposed:
-      "Move the paragraph beginning with “The discussion is no longer only about whether AI should be used...” to the end of the piece so the conclusion follows the supporting arguments rather than appearing before them.",
-  },
-  {
     id: "s2",
     category: "Tone",
     severity: "high",
@@ -191,5 +174,22 @@ export const suggestions = [
     },
     proposed:
       "These tools have blurred the boundaries between human creativity and machine assistance. That shift raises essential questions about the future of scholarly communication.",
+  },
+  {
+    id: "s1",
+    category: "Structure",
+    severity: "high",
+    excerpt: "The discussion is no longer only about whether AI should be used...",
+    paragraphIndex: 1,
+    targetText:
+      "The discussion is no longer only about whether AI should be used. It is about how it should be used, where its limits should be drawn, and how writers can preserve clarity, ownership, and voice while still benefiting from the speed it offers.",
+    observation:
+      "You usually develop supporting ideas before arriving at the final takeaway. Here, the piece introduces a conclusion-like paragraph before the earlier points have been fully established.",
+    tradeoff: {
+      gain: "A conclusion that follows the supporting arguments.",
+      loss: "Slightly less front-loaded emphasis.",
+    },
+    proposed:
+      "Move the paragraph beginning with “The discussion is no longer only about whether AI should be used...” to the end of the piece so the conclusion follows the supporting arguments rather than appearing before them.",
   },
 ];
