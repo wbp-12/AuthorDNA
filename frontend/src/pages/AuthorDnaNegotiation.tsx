@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import { metrics, sampleText, suggestions, userBaseline } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
-import { Check, X, Sparkles, Activity, FileText, Send, RotateCcw, ChevronDown, ChevronUp } from "lucide-react";
+import { Check, X, Sparkles, Activity, FileText, Send, RotateCcw, ChevronDown, ChevronUp, ChevronLeft, ChevronRight } from "lucide-react";
 
 function MetricBar({
   score,
@@ -117,44 +117,79 @@ function renderParagraphWithHover(
   );
 }
 
-function buildRefineVariations(category: string) {
+function buildRefineVariations(category: string, generationIndex = 0) {
   switch (category) {
     case "Tone":
       return [
-        "Artificial intelligence has redefined academic authorship.",
-        "Artificial intelligence has changed scholarly writing significantly.",
-        "Artificial intelligence has redefined how scholars approach writing.",
-      ];
+        [
+          "Artificial intelligence has fundamentally changed how scholars write.",
+          "Artificial intelligence is changing how scholars write.",
+          "Artificial intelligence has altered academic writing in important ways.",
+        ],
+        [
+          "Artificial intelligence has redefined academic authorship.",
+          "Artificial intelligence has changed scholarly writing significantly.",
+          "Artificial intelligence has redefined how scholars approach writing.",
+        ],
+      ][generationIndex % 2]
     case "Sentence Flow":
       return [
-        "The technology has evolved rapidly. It brings real opportunities and challenges.",
-        "The technology has changed quickly, creating opportunities and trade-offs worth weighing.",
-        "The technology has advanced at pace, and scholars are now balancing its benefits with its costs.",
-      ];
+        [
+          "Writers can now generate summaries, test outlines, and compare phrasings in seconds. Yet, those efficiencies do not remove the need for judgment.",
+          "Writers can now generate summaries, test outlines, and compare phrasings in seconds. Still, judgment remains necessary.",
+          "Writers can now generate summaries, test outlines, and compare phrasings in seconds. Even so, judgment still matters.",
+        ],
+        [
+          "The technology has moved quickly from novelty to ordinary tool. That shift has changed how researchers draft, revise, and evaluate their work.",
+          "The technology has moved quickly from novelty to ordinary tool. It has changed how researchers draft, revise, and evaluate their work.",
+          "The technology has advanced quickly. Researchers now draft, revise, and evaluate their work differently.",
+        ],
+      ][generationIndex % 2]
     case "Word Choice":
       return [
-        "...questions of authorship, originality, and honesty...",
-        "...questions of authorship, originality, and integrity...",
-        "...questions of authorship, originality, and responsibility...",
-      ];
+        [
+          "...a practical extension of the writing process...",
+          "...a practical extension of writing itself...",
+          "...a practical part of the writing process...",
+        ],
+        [
+          "...a useful extension of the writing process...",
+          "...a practical part of how people write...",
+          "...a direct extension of the writing process...",
+        ],
+      ][generationIndex % 2]
     case "Structure":
       return [
-        "The integration of these tools has shifted academic writing in subtle but important ways.",
-        "These tools are changing academic writing, but the implications are still unfolding.",
-        "The tools are now part of the writing process, and the full effects are still emerging.",
-      ];
+        [
+          "The discussion is no longer only about whether AI should be used. It is about how it should be used, where its limits should be drawn, and how writers can preserve clarity, ownership, and voice while still benefiting from the speed it offers.",
+          "The discussion is no longer only about whether AI should be used. It now turns to how it should be used, where its limits should be drawn, and how writers can preserve clarity and voice.",
+          "The discussion is no longer only about whether AI should be used. The harder questions are how it should be used and how writers can preserve voice.",
+        ],
+        [
+          "The discussion is no longer only about whether AI should be used. It is now about how it should be used, where its limits should be drawn, and how writers can keep clarity and ownership intact.",
+          "The discussion is no longer only about whether AI should be used. It is about the conditions, limits, and tradeoffs that follow.",
+          "The discussion is no longer only about whether AI should be used. It is about how writers can use it without losing clarity or voice.",
+        ],
+      ][generationIndex % 2]
     case "Punctuation":
       return [
-        "The integration of these tools — quietly, over years — has blurred the boundaries...",
-        "The integration of these tools, over time, has blurred the boundaries...",
-        "The integration of these tools has blurred the boundaries between human creativity and machine assistance.",
-      ];
+        [
+          "In many cases, they make judgment more important because the first clear answer is not always the most precise one.",
+          "In many cases, they make judgment more important. The first clear answer is not always the most precise one.",
+          "In many cases, they make judgment more important; the first clear answer is not always the most precise one.",
+        ],
+        [
+          "Furthermore, the integration of these tools has blurred the boundaries between human creativity and machine assistance. That shift raises essential questions about the future of scholarly communication.",
+          "Furthermore, these tools have blurred the boundaries between human creativity and machine assistance. That shift raises essential questions about the future of scholarly communication.",
+          "These tools have blurred the boundaries between human creativity and machine assistance. The shift raises essential questions about the future of scholarly communication.",
+        ],
+      ][generationIndex % 2]
     default:
       return [
         "The proposed wording stays close to the original while making the change more direct.",
         "This version keeps the meaning but tightens the phrasing.",
         "A slightly softer alternative that preserves the original intent.",
-      ];
+      ]
   }
 }
 
@@ -162,10 +197,11 @@ export default function InfluenceDashboard() {
   const [resolved, setResolved] = useState<Record<string, "accept" | "reject">>({});
   const [activeRefineId, setActiveRefineId] = useState<string | null>(null);
   const [refinePrompt, setRefinePrompt] = useState("");
-  const [refineVariations, setRefineVariations] = useState<Record<string, string[]>>({});
+  const [refineVariationSets, setRefineVariationSets] = useState<Record<string, string[][]>>({});
+  const [refineVariationIndex, setRefineVariationIndex] = useState<Record<string, number>>({});
   const [showBreakdown, setShowBreakdown] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [hoveredSuggestionId, setHoveredSuggestionId] = useState<string | null>(null);
+  const [selectedSuggestionId, setSelectedSuggestionId] = useState<string | null>(null);
   const paragraphRefs = useRef<(HTMLParagraphElement | null)[]>([]);
 
   const overall = useMemo(
@@ -173,13 +209,16 @@ export default function InfluenceDashboard() {
     [],
   );
 
+  const visibleMetrics = selectedCategory
+    ? metrics.filter((m) => m.name === selectedCategory)
+    : metrics;
   const visibleSuggestions = selectedCategory
     ? suggestions.filter((s) => s.category === selectedCategory)
     : suggestions;
   const documentParagraphs = sampleText.trim().split(/\n\s*\n/);
-  const hoveredSuggestion = suggestions.find((s) => s.id === hoveredSuggestionId) ?? null;
-  const hoveredColor = hoveredSuggestion ? getCategoryColor(hoveredSuggestion.category) : null;
-  const hoveredTarget = hoveredSuggestion?.targetText ?? null;
+  const selectedSuggestion = suggestions.find((s) => s.id === selectedSuggestionId) ?? null;
+  const selectedColor = selectedSuggestion ? getCategoryColor(selectedSuggestion.category) : null;
+  const selectedTarget = selectedSuggestion?.targetText ?? null;
   const flaggedTokens = [
     "seems that",
     "perhaps",
@@ -204,9 +243,18 @@ export default function InfluenceDashboard() {
     if (!prompt) {
       return;
     }
-    setRefineVariations((current) => ({
+    const suggestion = suggestions.find((s) => s.id === id);
+    if (!suggestion) {
+      return;
+    }
+
+    setRefineVariationSets((current) => ({
       ...current,
-      [id]: buildRefineVariations(suggestions.find((s) => s.id === id)?.category ?? ""),
+      [id]: [buildRefineVariations(suggestion.category, 0)],
+    }));
+    setRefineVariationIndex((current) => ({
+      ...current,
+      [id]: 0,
     }));
   };
 
@@ -267,7 +315,10 @@ export default function InfluenceDashboard() {
 
       <main className="grid min-h-0 flex-1 grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         {/* LEFT — A4 document */}
-        <section className="min-h-0 overflow-y-auto bg-paper/30 px-8 py-8">
+        <section
+          className="min-h-0 overflow-y-auto bg-paper/30 px-8 py-8"
+          onClick={() => setSelectedSuggestionId(null)}
+        >
           <div className="mx-auto flex max-w-[816px] flex-col">
             <div className="mb-3 flex items-center justify-between text-xs text-ink-muted">
               <div className="flex items-center gap-2">
@@ -308,12 +359,7 @@ export default function InfluenceDashboard() {
                       }}
                       className={paragraphIndex === documentParagraphs.length - 1 ? "" : "mb-4"}
                     >
-                      {renderParagraphWithHover(
-                        paragraph,
-                        flaggedTokens,
-                        hoveredTarget,
-                        hoveredColor ? hoveredColor.soft : null,
-                      )}
+                      {renderParagraphWithHover(paragraph, flaggedTokens, selectedTarget, selectedColor ? selectedColor.soft : null)}
                     </p>
                   ))}
                 </div>
@@ -367,7 +413,7 @@ export default function InfluenceDashboard() {
               <>
                 <div className="my-4 border-b border-border/70" />
                 <div className="space-y-2.5">
-                  {metrics.map((m) => (
+                  {visibleMetrics.map((m) => (
                     <div key={m.id}>
                       <div className="mb-1 flex items-center justify-between">
                         <span className="text-xs text-ink">{m.name}</span>
@@ -439,6 +485,7 @@ export default function InfluenceDashboard() {
               {visibleSuggestions.map((s) => {
                 const state = resolved[s.id];
                 const categoryColor = getCategoryColor(s.category);
+                const isSelected = selectedSuggestionId === s.id;
                 return (
                   <div
                     key={s.id}
@@ -446,10 +493,14 @@ export default function InfluenceDashboard() {
                       "rounded-lg border p-3.5 transition-all",
                       state === "accept" && "border-brand/40 bg-brand-muted/30",
                       state === "reject" && "opacity-60",
-                      !state && "border-border bg-background hover:border-brand/40",
+                      !state &&
+                        cn(
+                          "border-border bg-background",
+                          isSelected ? "border-brand" : "hover:border-brand/50",
+                        ),
                     )}
-                    onMouseEnter={() => {
-                      setHoveredSuggestionId(s.id);
+                    onClick={() => {
+                      setSelectedSuggestionId(s.id);
                       const paragraphIndex = s.paragraphIndex ?? 0;
                       window.requestAnimationFrame(() => {
                         paragraphRefs.current[paragraphIndex]?.scrollIntoView({
@@ -458,9 +509,6 @@ export default function InfluenceDashboard() {
                         });
                       });
                     }}
-                    onMouseLeave={() =>
-                      setHoveredSuggestionId((current) => (current === s.id ? null : current))
-                    }
                   >
                     <div className="mb-2 flex items-center gap-2">
                       <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: categoryColor.fill }} />
@@ -526,12 +574,12 @@ export default function InfluenceDashboard() {
                         </div>
 
                         <div className="relative rounded-md border border-border bg-background px-3 py-2">
-                          <textarea
-                            value={refinePrompt}
-                            onChange={(e) => setRefinePrompt(e.target.value)}
-                            placeholder="E.g., Make it more concise and natural, reduce the academic tone, …"
-                            className="min-h-[56px] w-full resize-none bg-transparent text-sm text-ink outline-none placeholder:text-ink-muted/70"
-                          />
+                            <textarea
+                              value={refinePrompt}
+                              onChange={(e) => setRefinePrompt(e.target.value)}
+                            placeholder="E.g., Make it more concise..."
+                              className="min-h-[56px] w-full resize-none bg-transparent text-sm text-ink outline-none placeholder:text-ink-muted/70"
+                            />
                           <button
                             type="button"
                             onClick={() => handleSubmitRefine(s.id)}
@@ -542,7 +590,7 @@ export default function InfluenceDashboard() {
                           </button>
                         </div>
 
-                        {refineVariations[s.id] && (
+                        {refineVariationSets[s.id] && (
                           <div className="mt-3">
                             <div className="mb-2 flex items-center justify-between">
                               <div>
@@ -550,20 +598,34 @@ export default function InfluenceDashboard() {
                                   Here are 3 variations
                                 </div>
                                 <div className="text-xs text-ink-muted">
-                                  Select the one that fits best, or refine further.
+                                  Select the one you like best, or refine further.
                                 </div>
                               </div>
-                            <button
+                              <button
                                 type="button"
                                 onClick={() =>
-                                  setRefineVariations((current) => ({
-                                    ...current,
-                                    [s.id]: [
-                                      "Artificial intelligence has fundamentally changed how scholars write.",
-                                      "Artificial intelligence is changing academic writing at its core.",
-                                      "Artificial intelligence has transformed academic writing.",
-                                    ],
-                                  }))
+                                  setRefineVariationSets((current) => {
+                                    const suggestion = suggestions.find((item) => item.id === s.id)
+                                    if (!suggestion) {
+                                      return current
+                                    }
+
+                                    const sets = current[s.id] ?? [buildRefineVariations(suggestion.category, 0)]
+
+                                    setRefineVariationIndex((currentIndex) => ({
+                                      ...currentIndex,
+                                      [s.id]: 1,
+                                    }))
+
+                                    if (sets.length >= 2) {
+                                      return current
+                                    }
+
+                                    return {
+                                      ...current,
+                                      [s.id]: [...sets, buildRefineVariations(suggestion.category, 1)],
+                                    }
+                                  })
                                 }
                                 className="flex items-center gap-1 text-xs text-ink-muted transition hover:text-ink"
                               >
@@ -573,7 +635,7 @@ export default function InfluenceDashboard() {
                             </div>
 
                             <div className="space-y-2">
-                              {refineVariations[s.id].map((variation) => (
+                              {(refineVariationSets[s.id]?.[refineVariationIndex[s.id] ?? 0] ?? []).map((variation) => (
                                 <div
                                   key={variation}
                                   className="flex items-start gap-3 rounded-md border border-border bg-background px-3 py-2.5"
@@ -592,6 +654,42 @@ export default function InfluenceDashboard() {
                                 </div>
                               ))}
                             </div>
+
+                            {(refineVariationSets[s.id]?.length ?? 0) > 1 && (
+                              <div className="mt-3 flex items-center justify-end gap-1 text-xs text-ink-muted">
+                              <button
+                                type="button"
+                                aria-label="Previous regeneration"
+                                disabled={(refineVariationIndex[s.id] ?? 0) === 0}
+                                onClick={() =>
+                                  setRefineVariationIndex((current) => ({
+                                    ...current,
+                                    [s.id]: Math.max((current[s.id] ?? 0) - 1, 0),
+                                  }))
+                                }
+                                className="inline-flex h-4 w-4 items-center justify-center p-0 leading-none text-ink-muted transition hover:text-ink disabled:cursor-not-allowed disabled:opacity-30"
+                                >
+                                  <ChevronLeft className="h-3 w-3" />
+                              </button>
+                                <span className="text-xs font-medium leading-none text-ink-muted transition hover:text-ink">
+                                  {(refineVariationIndex[s.id] ?? 0) + 1}/2
+                                </span>
+                                <button
+                                  type="button"
+                                  aria-label="Next regeneration"
+                                  disabled={(refineVariationIndex[s.id] ?? 0) >= 1}
+                                  onClick={() =>
+                                    setRefineVariationIndex((current) => ({
+                                      ...current,
+                                      [s.id]: 1,
+                                    }))
+                                  }
+                                  className="inline-flex h-4 w-4 items-center justify-center p-0 leading-none text-ink-muted transition hover:text-ink disabled:cursor-not-allowed disabled:opacity-30"
+                                >
+                                  <ChevronRight className="h-3 w-3" />
+                                </button>
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
