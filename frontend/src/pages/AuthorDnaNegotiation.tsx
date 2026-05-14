@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { metrics, sampleText, suggestions, userBaseline } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 import { Check, X, Sparkles, Activity, FileText, Send, RotateCcw, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Info } from "lucide-react";
@@ -62,6 +62,80 @@ function normalizeExcerpt(value: string) {
   return value.replace(/^"+|"+$/g, "").replace(/^\.\.\./, "").replace(/\.\.\.$/, "").trim();
 }
 
+type Suggestion = (typeof suggestions)[number];
+
+type AcceptedHighlight = {
+  text: string;
+  color: string;
+  token: number;
+} | null;
+
+function replaceFirstOccurrence(text: string, search: string, replacement: string) {
+  const index = text.indexOf(search);
+  if (index === -1) {
+    return text;
+  }
+
+  return text.slice(0, index) + replacement + text.slice(index + search.length);
+}
+
+function applySuggestionAcceptance(draftText: string, suggestion: Suggestion, variation: string) {
+  if (suggestion.id === "s1") {
+    if (variation.toLowerCase().startsWith("move the paragraph")) {
+      const paragraphs = draftText.trim().split(/\n\s*\n/);
+      const paragraphIndex = suggestion.paragraphIndex ?? 0;
+      const paragraph = paragraphs[paragraphIndex];
+      if (!paragraph) {
+        return { text: draftText, highlightText: null };
+      }
+
+      const nextParagraphs = [...paragraphs];
+      nextParagraphs.splice(paragraphIndex, 1);
+      nextParagraphs.push(paragraph);
+
+      return {
+        text: nextParagraphs.join("\n\n"),
+        highlightText: paragraph,
+      };
+    }
+
+    const paragraphs = draftText.trim().split(/\n\s*\n/);
+    const paragraph = paragraphs[suggestion.paragraphIndex ?? 0];
+    if (!paragraph) {
+      return { text: draftText, highlightText: null };
+    }
+
+    const nextParagraphs = [...paragraphs];
+    nextParagraphs.splice(suggestion.paragraphIndex ?? 0, 1);
+    nextParagraphs.push(variation);
+
+    return {
+      text: nextParagraphs.join("\n\n"),
+      highlightText: variation,
+    };
+  }
+
+  if (suggestion.id === "s3") {
+    const normalizedVariation = normalizeExcerpt(variation);
+    const nextText = replaceFirstOccurrence(
+      draftText,
+      "a practical extension of writing labor",
+      normalizedVariation,
+    );
+
+    return {
+      text: nextText,
+      highlightText: normalizedVariation,
+    };
+  }
+
+  const nextText = replaceFirstOccurrence(draftText, suggestion.targetText, variation);
+  return {
+    text: nextText,
+    highlightText: variation,
+  };
+}
+
 function renderFlaggedText(text: string, flaggedTokens: string[]) {
   return text.split(new RegExp(`(${flaggedTokens.map(escapeRegExp).join("|")})`, "g")).map((part, i) => {
     const flagged = flaggedTokens.includes(part);
@@ -83,6 +157,7 @@ function renderParagraphWithHover(
   flaggedTokens: string[],
   hoverPhrase: string | null,
   hoverColor: string | null,
+  pulseToken?: number | null,
 ) {
   const normalizedHover = hoverPhrase ? normalizeExcerpt(hoverPhrase) : "";
   if (!normalizedHover) {
@@ -105,7 +180,11 @@ function renderParagraphWithHover(
     <>
       {renderFlaggedText(before, flaggedTokens)}
       <mark
-        className="rounded-sm px-0.5 py-0.5 text-ink"
+        key={`${start}-${end}-${pulseToken ?? "static"}`}
+        className={cn(
+          "rounded-sm px-0.5 py-0.5 text-ink",
+          pulseToken !== null && pulseToken !== undefined && "editor-highlight-pulse",
+        )}
         style={{
           backgroundColor: hoverColor ?? CATEGORY_COLORS["Sentence Flow"].soft,
         }}
@@ -202,6 +281,8 @@ export default function InfluenceDashboard() {
   const [showBreakdown, setShowBreakdown] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedSuggestionId, setSelectedSuggestionId] = useState<string | null>(null);
+  const [acceptedHighlight, setAcceptedHighlight] = useState<AcceptedHighlight>(null);
+  const [documentText, setDocumentText] = useState(sampleText);
   const paragraphRefs = useRef<(HTMLParagraphElement | null)[]>([]);
 
   const overall = useMemo(
@@ -215,10 +296,14 @@ export default function InfluenceDashboard() {
   const visibleSuggestions = selectedCategory
     ? suggestions.filter((s) => s.category === selectedCategory)
     : suggestions;
-  const documentParagraphs = sampleText.trim().split(/\n\s*\n/);
+  const documentParagraphs = documentText.trim().split(/\n\s*\n/);
   const selectedSuggestion = suggestions.find((s) => s.id === selectedSuggestionId) ?? null;
   const selectedColor = selectedSuggestion ? getCategoryColor(selectedSuggestion.category) : null;
   const selectedTarget = selectedSuggestion?.targetText ?? null;
+  const activeHighlight = acceptedHighlight ?? null;
+  const activeHighlightText = activeHighlight?.text ?? selectedTarget;
+  const activeHighlightColor = activeHighlight?.color ?? (selectedColor ? selectedColor.soft : null);
+  const activeHighlightToken = activeHighlight?.token ?? null;
   const flaggedTokens = [
     "seems that",
     "perhaps",
@@ -256,6 +341,38 @@ export default function InfluenceDashboard() {
       ...current,
       [id]: 0,
     }));
+  };
+
+  useEffect(() => {
+    if (!acceptedHighlight) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => setAcceptedHighlight(null), 850);
+    return () => window.clearTimeout(timer);
+  }, [acceptedHighlight]);
+
+  const handleAcceptVariation = (suggestionId: string, variation: string) => {
+    const suggestion = suggestions.find((item) => item.id === suggestionId);
+    if (!suggestion) {
+      return;
+    }
+
+    const applied = applySuggestionAcceptance(documentText, suggestion, variation);
+    setDocumentText(applied.text);
+    setResolved((current) => ({
+      ...current,
+      [suggestionId]: "accept",
+    }));
+    setSelectedSuggestionId(null);
+
+    if (applied.highlightText) {
+      setAcceptedHighlight({
+        text: applied.highlightText,
+        color: getCategoryColor(suggestion.category).soft,
+        token: Date.now(),
+      });
+    }
   };
 
   return (
@@ -359,7 +476,13 @@ export default function InfluenceDashboard() {
                       }}
                       className={paragraphIndex === documentParagraphs.length - 1 ? "" : "mb-4"}
                     >
-                      {renderParagraphWithHover(paragraph, flaggedTokens, selectedTarget, selectedColor ? selectedColor.soft : null)}
+                      {renderParagraphWithHover(
+                        paragraph,
+                        flaggedTokens,
+                        activeHighlightText,
+                        activeHighlightColor,
+                        activeHighlightToken,
+                      )}
                     </p>
                   ))}
                 </div>
@@ -367,7 +490,7 @@ export default function InfluenceDashboard() {
             </div>
 
             <div className="mt-3 flex items-center justify-between text-xs text-ink-muted">
-              <span>{sampleText.split(/\s+/).length} words · 5 paragraphs</span>
+              <span>{documentText.split(/\s+/).length} words · {documentParagraphs.length} paragraphs</span>
               <span>Page 1 of 1</span>
             </div>
           </div>
@@ -550,7 +673,8 @@ export default function InfluenceDashboard() {
                     {!state && (
                       <div className="grid grid-cols-3 gap-1.5">
                         <button
-                          onClick={() => setResolved((r) => ({ ...r, [s.id]: "accept" }))}
+                          type="button"
+                          onClick={() => handleAcceptVariation(s.id, s.proposed)}
                           className="flex items-center justify-center gap-1 rounded-md bg-brand px-2 py-1.5 text-xs font-medium text-brand-foreground transition hover:opacity-90"
                         >
                           <Check className="h-3 w-3" /> Accept
@@ -661,6 +785,7 @@ export default function InfluenceDashboard() {
                                   </div>
                                   <button
                                     type="button"
+                                    onClick={() => handleAcceptVariation(s.id, variation)}
                                     className="shrink-0 rounded-md border border-border bg-background px-3 py-1.5 text-xs text-ink transition hover:bg-paper"
                                   >
                                     Accept

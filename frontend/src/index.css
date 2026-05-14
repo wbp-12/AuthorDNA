@@ -158,3 +158,26 @@
     color: var(--color-foreground);
   }
 }
+
+@layer utilities {
+  .editor-highlight-pulse {
+    transform-origin: center;
+    animation: editor-highlight-pulse 780ms cubic-bezier(0.2, 0.8, 0.2, 1);
+    display: inline-block;
+  }
+}
+
+@keyframes editor-highlight-pulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--color-brand) 16%, transparent);
+  }
+  45% {
+    transform: scale(1.035);
+    box-shadow: 0 0 0 8px color-mix(in oklab, var(--color-brand) 10%, transparent);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--color-brand) 0%, transparent);
+  }
+}
