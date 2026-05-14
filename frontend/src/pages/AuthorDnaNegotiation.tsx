@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import { metrics, sampleText, suggestions, userBaseline } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
-import { Check, X, Sparkles, Activity, FileText, Send, RotateCcw, ChevronDown, ChevronUp, ChevronLeft, ChevronRight } from "lucide-react";
+import { Check, X, Sparkles, Activity, FileText, Send, RotateCcw, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Info } from "lucide-react";
 
 function MetricBar({
   score,
@@ -378,7 +378,21 @@ export default function InfluenceDashboard() {
           {/* Influence Index */}
           <div className="border-b border-border p-5">
             <div className="mb-4 flex items-center justify-between gap-3">
-              <h2 className="font-serif text-[22px] text-ink">DNA Alignment</h2>
+              <div className="flex items-center">
+                <h2 className="font-serif text-[22px] text-ink">DNA Alignment</h2>
+                <div className="group relative ml-2 inline-flex items-center">
+                  <button
+                    type="button"
+                    aria-label="What is DNA Alignment?"
+                    className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-transparent text-ink-muted/60 transition duration-150 hover:bg-ink/5 hover:text-ink-muted/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/20"
+                  >
+                    <Info className="h-3 w-3" strokeWidth={2.2} />
+                  </button>
+                  <div className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 w-64 -translate-x-1/2 translate-y-1 rounded-2xl border border-border/70 bg-paper/95 px-3 py-2 text-left text-xs leading-5 text-ink-muted opacity-0 shadow-[0_12px_28px_rgba(15,23,42,0.10)] backdrop-blur transition duration-150 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100">
+                    This score measures how closely the current draft matches your established writing style.
+                  </div>
+                </div>
+              </div>
               <span className="font-serif text-[22px] leading-none text-ink">{overall}</span>
             </div>
             <div className="mb-3">
