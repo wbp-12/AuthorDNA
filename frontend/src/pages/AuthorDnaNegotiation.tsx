@@ -70,6 +70,17 @@ type AcceptedHighlight = {
   token: number;
 } | null;
 
+type TextHighlight = {
+  text: string;
+  color: string;
+  token: number;
+} | null;
+
+type SelectionMenuPosition = {
+  left: number;
+  top: number;
+} | null;
+
 function replaceFirstOccurrence(text: string, search: string, replacement: string) {
   const index = text.indexOf(search);
   if (index === -1) {
@@ -168,6 +179,7 @@ function renderParagraphWithHover(
   flaggedTokens: string[],
   hoverPhrase: string | null,
   hoverColor: string | null,
+  highlightToken?: number | null,
   pulseToken?: number | null,
 ) {
   const normalizedHover = hoverPhrase ? normalizeExcerpt(hoverPhrase) : "";
@@ -191,13 +203,14 @@ function renderParagraphWithHover(
     <>
       {renderFlaggedText(before, flaggedTokens)}
       <mark
-        key={`${start}-${end}-${pulseToken ?? "static"}`}
+        key={`${start}-${end}-${highlightToken ?? "static"}`}
         className={cn(
-          "rounded-sm px-0.5 py-0.5 text-ink",
+          "px-0.5 py-0.5 text-ink",
           pulseToken !== null && pulseToken !== undefined && "editor-highlight-pulse",
         )}
         style={{
-          backgroundColor: hoverColor ?? CATEGORY_COLORS["Sentence Flow"].soft,
+          backgroundColor: hoverColor ?? "oklch(0.92 0.04 250)",
+          borderRadius: 0,
         }}
       >
         {concern}
@@ -294,9 +307,19 @@ export default function InfluenceDashboard() {
   const [showBreakdown, setShowBreakdown] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedSuggestionId, setSelectedSuggestionId] = useState<string | null>(null);
+  const [selectionMenuPosition, setSelectionMenuPosition] = useState<SelectionMenuPosition>(null);
+  const [isRefineComposerOpen, setIsRefineComposerOpen] = useState(false);
+  const [refineSectionPrompt, setRefineSectionPrompt] = useState("");
   const [acceptedHighlight, setAcceptedHighlight] = useState<AcceptedHighlight>(null);
+  const [refineSelectionHighlight, setRefineSelectionHighlight] = useState<TextHighlight>(null);
   const [documentText, setDocumentText] = useState(sampleText);
+  const editorRef = useRef<HTMLDivElement | null>(null);
+  const refineSectionInputRef = useRef<HTMLInputElement | null>(null);
   const paragraphRefs = useRef<(HTMLParagraphElement | null)[]>([]);
+  const selectionMenuFrameRef = useRef<number | null>(null);
+  const composerFrameRef = useRef<number | null>(null);
+  const openingComposerFromSelectionRef = useRef(false);
+  const [composerPosition, setComposerPosition] = useState<{ left: number; width: number } | null>(null);
 
   const overall = useMemo(
     () => Math.round(metrics.reduce((s, m) => s + m.score, 0) / metrics.length),
@@ -314,9 +337,13 @@ export default function InfluenceDashboard() {
   const selectedColor = selectedSuggestion ? getCategoryColor(selectedSuggestion.category) : null;
   const selectedTarget = selectedSuggestion?.targetText ?? null;
   const activeHighlight = acceptedHighlight ?? null;
-  const activeHighlightText = activeHighlight?.text ?? selectedTarget;
-  const activeHighlightColor = activeHighlight?.color ?? (selectedColor ? selectedColor.soft : null);
-  const activeHighlightToken = activeHighlight?.token ?? null;
+  const activeHighlightText = activeHighlight?.text ?? refineSelectionHighlight?.text ?? selectedTarget;
+  const activeHighlightColor =
+    activeHighlight?.color ??
+    refineSelectionHighlight?.color ??
+    (selectedColor ? selectedColor.soft : null);
+  const activeHighlightToken = refineSelectionHighlight?.token ?? null;
+  const activeHighlightPulseToken = activeHighlight?.token ?? null;
   const flaggedTokens = [
     "seems that",
     "perhaps",
@@ -426,6 +453,165 @@ export default function InfluenceDashboard() {
     setActiveRefineId((current) => (current === suggestionId ? null : current));
   };
 
+  useEffect(() => {
+    function updateSelectionMenu(shouldCloseComposer: boolean) {
+      const selection = window.getSelection();
+      if (!selection || selection.rangeCount === 0) {
+        if (!isRefineComposerOpen || (shouldCloseComposer && !openingComposerFromSelectionRef.current)) {
+          setSelectionMenuPosition(null);
+        }
+        return;
+      }
+
+      const range = selection.getRangeAt(0);
+      const text = selection.toString().trim();
+      if (!text || range.collapsed) {
+        if (!isRefineComposerOpen || (shouldCloseComposer && !openingComposerFromSelectionRef.current)) {
+          setSelectionMenuPosition(null);
+        }
+        return;
+      }
+
+      const root = editorRef.current;
+      if (!root) {
+        return;
+      }
+
+      const commonAncestor = range.commonAncestorContainer;
+      if (!root.contains(commonAncestor)) {
+        if (!isRefineComposerOpen || (shouldCloseComposer && !openingComposerFromSelectionRef.current)) {
+          setSelectionMenuPosition(null);
+        }
+        return;
+      }
+
+      const rects = Array.from(range.getClientRects()).filter((rect) => rect.width > 0 || rect.height > 0);
+      const anchorRect = rects.at(-1) ?? range.getBoundingClientRect();
+      if (!anchorRect || (anchorRect.width === 0 && anchorRect.height === 0)) {
+        return;
+      }
+
+      const triggerWidth = 58;
+      const viewportPadding = 16;
+      const top = Math.min(anchorRect.bottom + 10, window.innerHeight - viewportPadding);
+      const left = Math.min(
+        Math.max(anchorRect.right, viewportPadding),
+        window.innerWidth - triggerWidth - viewportPadding,
+      );
+
+      setSelectionMenuPosition({ left, top });
+      if (shouldCloseComposer) {
+        if (!openingComposerFromSelectionRef.current) {
+          setIsRefineComposerOpen(false);
+        }
+      }
+    }
+
+    function handleSelectionChange() {
+      if (selectionMenuFrameRef.current != null) {
+        window.cancelAnimationFrame(selectionMenuFrameRef.current);
+      }
+
+      selectionMenuFrameRef.current = window.requestAnimationFrame(() => {
+        updateSelectionMenu(true);
+      });
+    }
+
+    function handleSelectionViewportChange() {
+      if (selectionMenuFrameRef.current != null) {
+        window.cancelAnimationFrame(selectionMenuFrameRef.current);
+      }
+
+      selectionMenuFrameRef.current = window.requestAnimationFrame(() => {
+        updateSelectionMenu(false);
+      });
+    }
+
+    document.addEventListener("selectionchange", handleSelectionChange);
+    document.addEventListener("scroll", handleSelectionViewportChange, true);
+    window.addEventListener("resize", handleSelectionViewportChange);
+
+    return () => {
+      document.removeEventListener("selectionchange", handleSelectionChange);
+      document.removeEventListener("scroll", handleSelectionViewportChange, true);
+      window.removeEventListener("resize", handleSelectionViewportChange);
+      if (selectionMenuFrameRef.current != null) {
+        window.cancelAnimationFrame(selectionMenuFrameRef.current);
+      }
+    };
+  }, [isRefineComposerOpen]);
+
+  useEffect(() => {
+    if (!isRefineComposerOpen) {
+      return;
+    }
+
+    openingComposerFromSelectionRef.current = false;
+
+    function updateComposerPosition() {
+      const root = editorRef.current;
+      const pageRect = root?.parentElement?.getBoundingClientRect();
+      if (!pageRect) {
+        return;
+      }
+
+      const viewportPadding = 20;
+      const width = Math.min(520, pageRect.width - 24, window.innerWidth - viewportPadding * 2);
+      const left = Math.max(
+        Math.min(pageRect.left + pageRect.width / 2 - width / 2, window.innerWidth - width - viewportPadding),
+        viewportPadding,
+      );
+
+      setComposerPosition({ left, width });
+    }
+
+    function scheduleComposerPositionUpdate() {
+      if (composerFrameRef.current != null) {
+        window.cancelAnimationFrame(composerFrameRef.current);
+      }
+
+      composerFrameRef.current = window.requestAnimationFrame(updateComposerPosition);
+    }
+
+    updateComposerPosition();
+
+    document.addEventListener("scroll", scheduleComposerPositionUpdate, true);
+    window.addEventListener("resize", scheduleComposerPositionUpdate);
+
+    const timer = window.setTimeout(() => refineSectionInputRef.current?.focus(), 0);
+    return () => {
+      window.clearTimeout(timer);
+      document.removeEventListener("scroll", scheduleComposerPositionUpdate, true);
+      window.removeEventListener("resize", scheduleComposerPositionUpdate);
+      if (composerFrameRef.current != null) {
+        window.cancelAnimationFrame(composerFrameRef.current);
+      }
+    };
+  }, [isRefineComposerOpen]);
+
+  function clearRefineSelection() {
+    setIsRefineComposerOpen(false);
+    setSelectionMenuPosition(null);
+    setRefineSelectionHighlight(null);
+    openingComposerFromSelectionRef.current = false;
+    const selection = window.getSelection();
+    selection?.removeAllRanges();
+  }
+
+  function captureRefineSelectionHighlight() {
+    const selection = window.getSelection();
+    const text = selection?.toString().trim();
+    if (!text) {
+      return;
+    }
+
+    setRefineSelectionHighlight({
+      text,
+      color: "oklch(0.92 0.04 250)",
+      token: Date.now(),
+    });
+  }
+
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-background">
       {/* Header */}
@@ -506,7 +692,7 @@ export default function InfluenceDashboard() {
               className="rounded-sm border border-border bg-card shadow-soft"
               style={{ aspectRatio: "1 / 1.414", minHeight: "1056px" }}
             >
-              <div className="px-24 py-20">
+              <div ref={editorRef} className="px-24 py-20">
                 <h1
                   contentEditable
                   suppressContentEditableWarning
@@ -533,6 +719,7 @@ export default function InfluenceDashboard() {
                         activeHighlightText,
                         activeHighlightColor,
                         activeHighlightToken,
+                        activeHighlightPulseToken,
                       )}
                     </p>
                   ))}
@@ -921,6 +1108,65 @@ export default function InfluenceDashboard() {
           </div>
         </aside>
       </main>
+
+      {selectionMenuPosition && !isRefineComposerOpen ? (
+        <button
+          type="button"
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={() => {
+            captureRefineSelectionHighlight();
+            openingComposerFromSelectionRef.current = true;
+            setIsRefineComposerOpen(true);
+          }}
+          className="fixed z-30 inline-flex items-center gap-1.5 rounded-full border border-border bg-paper/95 px-3 py-1.5 text-[11px] font-medium text-ink-muted shadow-soft backdrop-blur transition hover:border-brand/40 hover:text-ink"
+          style={{
+            left: selectionMenuPosition.left,
+            top: selectionMenuPosition.top,
+          }}
+        >
+          <Sparkles className="h-3 w-3" />
+          Refine
+        </button>
+      ) : null}
+
+      {isRefineComposerOpen ? (
+        <div
+          className="fixed bottom-6 z-30 rounded-[24px] border border-[#eadfd3] bg-[#fbf8f2]/95 px-3.5 py-3.5 shadow-[0_2px_4px_rgba(17,24,39,0.05),0_14px_28px_rgba(17,24,39,0.08)] backdrop-blur"
+          style={{
+            left: composerPosition?.left ?? 20,
+            width: composerPosition?.width ?? "min(520px,calc(100vw-2rem))",
+          }}
+        >
+          <button
+            type="button"
+            onClick={clearRefineSelection}
+            className="absolute right-2.5 top-2.5 inline-flex h-5 w-5 items-center justify-center rounded-full text-ink-muted/65 transition hover:bg-ink/5 hover:text-ink"
+            aria-label="Close refine composer"
+          >
+            <X className="h-3 w-3" />
+          </button>
+          <div className="mb-2.5 pr-7 text-[12px] leading-5 text-ink-muted">
+            Tell the AI how you'd like to refine this section of text
+          </div>
+          <div className="relative">
+            <input
+              ref={refineSectionInputRef}
+              type="text"
+              value={refineSectionPrompt}
+              onChange={(event) => setRefineSectionPrompt(event.target.value)}
+              placeholder="Add instructions..."
+              className="min-w-0 h-10 w-full rounded-[15px] border border-[#efc8b0] bg-[#fffaf6] px-3.5 pr-12 text-[13px] text-ink outline-none placeholder:text-ink-muted/50 focus:border-[#efb88f]"
+            />
+            <button
+              type="button"
+              className="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-md border border-border bg-background p-0 leading-none text-brand transition hover:bg-paper"
+              aria-label="Send refine prompt"
+            >
+              <Send className="block h-3.5 w-3.5" />
+            </button>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
