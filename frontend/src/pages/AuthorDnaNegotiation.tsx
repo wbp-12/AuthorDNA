@@ -296,6 +296,21 @@ function buildRefineVariations(category: string, generationIndex = 0) {
   }
 }
 
+function buildComposerSectionVariations(generationIndex = 0) {
+  return [
+    [
+      "Universities, journals, and individual writers are still deciding how to define responsible use, and those decisions will affect how originality and authorship are understood in the future.",
+      "Universities, journals, and individual writers are still deciding how to define responsible use, and those decisions will affect how writers balance efficiency with originality in the future.",
+      "Universities, journals, and individual writers are still deciding how to define responsible use, and the lack of consensus reflects how quickly AI-generated writing is evolving.",
+    ],
+    [
+      "Universities, journals, and individual writers are still deciding how to define responsible use, and those decisions will help establish future standards for originality and attribution.",
+      "Universities, journals, and individual writers are still deciding how to define responsible use, and those decisions will influence how authorship is understood in increasingly AI-mediated environments.",
+      "Universities, journals, and individual writers are still deciding how to define responsible use, and the standards they establish may fundamentally change how intellectual contribution is recognised.",
+    ],
+  ][generationIndex % 2];
+}
+
 export default function InfluenceDashboard() {
   const [resolved, setResolved] = useState<Record<string, "accept" | "reject">>({});
   const [activeRefineId, setActiveRefineId] = useState<string | null>(null);
@@ -313,6 +328,10 @@ export default function InfluenceDashboard() {
   const [acceptedHighlight, setAcceptedHighlight] = useState<AcceptedHighlight>(null);
   const [refineSelectionHighlight, setRefineSelectionHighlight] = useState<TextHighlight>(null);
   const [documentText, setDocumentText] = useState(sampleText);
+  const [composerSectionVisible, setComposerSectionVisible] = useState(false);
+  const [composerSectionVariationSets, setComposerSectionVariationSets] = useState<string[][]>([]);
+  const [composerSectionVariationIndex, setComposerSectionVariationIndex] = useState(0);
+  const [composerSectionAcceptedVariation, setComposerSectionAcceptedVariation] = useState<string | null>(null);
   const editorRef = useRef<HTMLDivElement | null>(null);
   const refineSectionInputRef = useRef<HTMLInputElement | null>(null);
   const paragraphRefs = useRef<(HTMLParagraphElement | null)[]>([]);
@@ -381,6 +400,18 @@ export default function InfluenceDashboard() {
       ...current,
       [id]: 0,
     }));
+  };
+
+  const handleSubmitSectionRefine = () => {
+    const prompt = refineSectionPrompt.trim();
+    if (!prompt) {
+      return;
+    }
+
+    setComposerSectionVisible(true);
+    setComposerSectionVariationSets([buildComposerSectionVariations(0)]);
+    setComposerSectionVariationIndex(0);
+    setComposerSectionAcceptedVariation(null);
   };
 
   useEffect(() => {
@@ -846,266 +877,371 @@ export default function InfluenceDashboard() {
                 </div>
               </>
             )}
+
           </div>
 
-          {/* Suggestions — scrollable */}
-          <div>
-            <div className="flex items-baseline justify-between border-b border-border px-5 py-3">
-              <h3 className="font-serif text-sm text-ink">
-                Suggestions <span className="text-ink-muted">· {visibleSuggestions.length}</span>
-              </h3>
-              <span className="text-[11px] text-ink-muted">Accept, dismiss, refine</span>
-            </div>
-            <div className="space-y-2.5 p-4">
-              {visibleSuggestions.map((s) => {
-                const state = resolved[s.id];
-                const categoryColor = getCategoryColor(s.category);
-                const isSelected = selectedSuggestionId === s.id;
-                return (
-                  <div
-                    key={s.id}
-                    className={cn(
-                      "rounded-lg border p-3.5 transition-all",
-                      state === "accept" && "border-brand/40 bg-brand-muted/30",
-                      state === "reject" && "opacity-60",
-                      !state &&
-                        cn(
-                          "border-border bg-background",
-                          isSelected ? "border-brand" : "hover:border-brand/50",
-                        ),
-                    )}
-                    onClick={() => {
-                      setSelectedSuggestionId(s.id);
-                      const paragraphIndex = s.paragraphIndex ?? 0;
-                      window.requestAnimationFrame(() => {
-                        paragraphRefs.current[paragraphIndex]?.scrollIntoView({
-                          behavior: "smooth",
-                          block: "center",
-                        });
-                      });
-                    }}
-                  >
-                    <div className="mb-2 flex items-center gap-2">
-                      <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: categoryColor.fill }} />
-                      <span className="text-[10px] font-medium uppercase tracking-wider text-ink-muted">
-                        {s.category}
-                      </span>
-                      {state && (
-                        <div className="ml-auto flex items-center gap-2 text-[10px] font-medium text-ink-muted">
-                          <span>
-                            {state === "accept" ? "Accepted" : "Dismissed"}
-                          </span>
-                          <span>|</span>
-                          <button
-                            type="button"
-                            onClick={() => handleUndoSuggestion(s.id)}
-                            className="transition hover:text-ink"
-                          >
-                            Undo
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                    <p className="mb-2 line-clamp-2 text-xs italic text-ink-muted">"{s.excerpt}"</p>
-                    <p className="mb-2.5 text-xs text-ink">{s.observation}</p>
+          {composerSectionVisible && (
+            <div className="border-t border-border/70 px-5 py-4">
+              <div className="mb-2 flex items-center justify-between gap-3">
+                <div>
+                  <div className="font-serif text-sm font-medium text-ink">
+                    Here are 3 variations
+                  </div>
+                  <div className="text-xs text-ink-muted">
+                    Select the one you like best, or refine further.
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setComposerSectionVariationSets((current) => {
+                      if (current.length >= 2) {
+                        return current;
+                      }
 
-                    <div className="mb-2.5 rounded-md border border-dashed border-border bg-paper/60 p-2.5">
-                      <div className="mb-1 text-[10px] uppercase tracking-wider text-ink-muted">
-                        Proposed
-                      </div>
-                      <p className="font-serif text-[13px] leading-relaxed text-ink">
-                        {s.proposed}
+                      return [...current, buildComposerSectionVariations(1)];
+                    });
+                    setComposerSectionVariationIndex(1);
+                  }}
+                  className="flex items-center gap-1 text-xs text-ink-muted transition hover:text-ink"
+                >
+                  <RotateCcw className="h-3 w-3" />
+                  Regenerate
+                </button>
+              </div>
+
+              <div className="space-y-2">
+                {(composerSectionVariationSets[composerSectionVariationIndex] ?? []).map((variation) => (
+                  <div
+                    key={variation}
+                    className="flex items-start gap-3 rounded-md border border-border bg-background px-3 py-2.5"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="font-serif text-[13px] leading-snug text-ink">
+                        {variation}
                       </p>
                     </div>
-
-                    {!state && (
-                      <div className="grid grid-cols-3 gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => handleAcceptVariation(s.id, s.proposed)}
-                          className="flex items-center justify-center gap-1 rounded-md bg-brand px-2 py-1.5 text-xs font-medium text-brand-foreground transition hover:opacity-90"
-                        >
-                          <Check className="h-3 w-3" /> Accept
-                        </button>
-                        <button
-                          onClick={() => setResolved((r) => ({ ...r, [s.id]: "reject" }))}
-                          className="flex items-center justify-center gap-1 rounded-md border border-border bg-background px-2 py-1.5 text-xs text-ink transition hover:bg-paper"
-                        >
-                          <X className="h-3 w-3" /> Dismiss
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleRefineClick(s.id)}
-                          className={cn(
-                            "flex items-center justify-center gap-1 rounded-md border px-2 py-1.5 text-xs transition",
-                            activeRefineId === s.id
-                              ? "border-brand bg-brand-muted/30 text-ink"
-                              : "border-border bg-background text-ink hover:bg-paper",
-                          )}
-                        >
-                          <Sparkles className="h-3 w-3" /> Refine
-                        </button>
-                      </div>
+                    {composerSectionAcceptedVariation ? (
+                      <button
+                        type="button"
+                        disabled
+                        className="relative shrink-0 rounded-md border border-border bg-background px-3 py-1.5 text-xs text-ink"
+                        aria-label={
+                          composerSectionAcceptedVariation === variation
+                            ? "Accepted variation"
+                            : "Rejected variation"
+                        }
+                      >
+                        <span className="invisible">Accept</span>
+                        {composerSectionAcceptedVariation === variation ? (
+                          <Check className="absolute inset-0 m-auto h-3.5 w-3.5" />
+                        ) : (
+                          <X className="absolute inset-0 m-auto h-3.5 w-3.5" />
+                        )}
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setComposerSectionAcceptedVariation(variation)}
+                        className="shrink-0 rounded-md border border-border bg-background px-3 py-1.5 text-xs text-ink transition hover:bg-paper"
+                      >
+                        Accept
+                      </button>
                     )}
+                  </div>
+                ))}
+              </div>
 
-                    {activeRefineId === s.id && (
-                      <div className="mt-3 border-t border-border pt-3">
-                        <div className="mb-1">
-                          <div className="font-serif text-sm font-medium text-ink">
-                            Refine this suggestion
-                          </div>
-                          <div className="text-xs text-ink-muted">
-                            Tell the AI how you'd like to adjust the proposed text.
-                          </div>
-                        </div>
+              {composerSectionVariationSets.length > 1 && (
+                <div className="mt-3 flex items-center justify-end gap-1 text-xs text-ink-muted">
+                  <button
+                    type="button"
+                    aria-label="Previous regeneration"
+                    disabled={composerSectionVariationIndex === 0}
+                    onClick={() => setComposerSectionVariationIndex(0)}
+                    className="inline-flex h-4 w-4 items-center justify-center p-0 leading-none text-ink-muted transition hover:text-ink disabled:cursor-not-allowed disabled:opacity-30"
+                  >
+                    <ChevronLeft className="h-3 w-3" />
+                  </button>
+                  <span className="text-xs font-medium leading-none text-ink-muted transition hover:text-ink">
+                    {composerSectionVariationIndex + 1}/2
+                  </span>
+                  <button
+                    type="button"
+                    aria-label="Next regeneration"
+                    disabled={composerSectionVariationIndex >= 1}
+                    onClick={() => setComposerSectionVariationIndex(1)}
+                    className="inline-flex h-4 w-4 items-center justify-center p-0 leading-none text-ink-muted transition hover:text-ink disabled:cursor-not-allowed disabled:opacity-30"
+                  >
+                    <ChevronRight className="h-3 w-3" />
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
 
-                        <div className="relative rounded-md border border-border bg-background px-3 py-2">
-                            <textarea
-                              value={refinePrompt}
-                              onChange={(e) => setRefinePrompt(e.target.value)}
-                            placeholder="E.g., Make it more concise..."
-                              className="min-h-[56px] w-full resize-none bg-transparent text-sm text-ink outline-none placeholder:text-ink-muted/70"
-                            />
-                          <button
-                            type="button"
-                            onClick={() => handleSubmitRefine(s.id)}
-                            className="absolute bottom-2 right-2 flex h-7 w-7 items-center justify-center rounded-md border border-border bg-background text-brand transition hover:bg-paper"
-                            aria-label="Send refine prompt"
-                          >
-                            <Send className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
-
-                        {refineVariationSets[s.id] && (
-                          <div className="mt-3">
-                            <div className="mb-2 flex items-center justify-between">
-                              <div>
-                                <div className="font-serif text-sm font-medium text-ink">
-                                  Here are 3 variations
-                                </div>
-                                <div className="text-xs text-ink-muted">
-                                  Select the one you like best, or refine further.
-                                </div>
-                              </div>
+          {!composerSectionVisible && (
+            <div>
+              {/* Suggestions — scrollable */}
+              <div>
+                <div className="flex items-baseline justify-between border-b border-border px-5 py-3">
+                  <h3 className="font-serif text-sm text-ink">
+                    Suggestions <span className="text-ink-muted">· {visibleSuggestions.length}</span>
+                  </h3>
+                  <span className="text-[11px] text-ink-muted">Accept, dismiss, refine</span>
+                </div>
+                <div className="space-y-2.5 p-4">
+                  {visibleSuggestions.map((s) => {
+                    const state = resolved[s.id];
+                    const categoryColor = getCategoryColor(s.category);
+                    const isSelected = selectedSuggestionId === s.id;
+                    return (
+                      <div
+                        key={s.id}
+                        className={cn(
+                          "rounded-lg border p-3.5 transition-all",
+                          state === "accept" && "border-brand/40 bg-brand-muted/30",
+                          state === "reject" && "opacity-60",
+                          !state &&
+                            cn(
+                              "border-border bg-background",
+                              isSelected ? "border-brand" : "hover:border-brand/50",
+                            ),
+                        )}
+                        onClick={() => {
+                          setSelectedSuggestionId(s.id);
+                          const paragraphIndex = s.paragraphIndex ?? 0;
+                          window.requestAnimationFrame(() => {
+                            paragraphRefs.current[paragraphIndex]?.scrollIntoView({
+                              behavior: "smooth",
+                              block: "center",
+                            });
+                          });
+                        }}
+                      >
+                        <div className="mb-2 flex items-center gap-2">
+                          <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: categoryColor.fill }} />
+                          <span className="text-[10px] font-medium uppercase tracking-wider text-ink-muted">
+                            {s.category}
+                          </span>
+                          {state && (
+                            <div className="ml-auto flex items-center gap-2 text-[10px] font-medium text-ink-muted">
+                              <span>
+                                {state === "accept" ? "Accepted" : "Dismissed"}
+                              </span>
+                              <span>|</span>
                               <button
                                 type="button"
-                                onClick={() =>
-                                  setRefineVariationSets((current) => {
-                                    const suggestion = suggestions.find((item) => item.id === s.id)
-                                    if (!suggestion) {
-                                      return current
-                                    }
-
-                                    const sets = current[s.id] ?? [buildRefineVariations(suggestion.category, 0)]
-
-                                    setRefineVariationIndex((currentIndex) => ({
-                                      ...currentIndex,
-                                      [s.id]: 1,
-                                    }))
-
-                                    if (sets.length >= 2) {
-                                      return current
-                                    }
-
-                                    return {
-                                      ...current,
-                                      [s.id]: [...sets, buildRefineVariations(suggestion.category, 1)],
-                                    }
-                                  })
-                                }
-                                className="flex items-center gap-1 text-xs text-ink-muted transition hover:text-ink"
+                                onClick={() => handleUndoSuggestion(s.id)}
+                                className="transition hover:text-ink"
                               >
-                                <RotateCcw className="h-3 w-3" />
-                                Regenerate
+                                Undo
                               </button>
                             </div>
+                          )}
+                        </div>
+                        <p className="mb-2 line-clamp-2 text-xs italic text-ink-muted">"{s.excerpt}"</p>
+                        <p className="mb-2.5 text-xs text-ink">{s.observation}</p>
 
-                            <div className="space-y-2">
-                              {(refineVariationSets[s.id]?.[refineVariationIndex[s.id] ?? 0] ?? []).map((variation) => (
-                                <div
-                                  key={variation}
-                                  className="flex items-start gap-3 rounded-md border border-border bg-background px-3 py-2.5"
-                                >
-                                  <div className="min-w-0 flex-1">
-                                    <p className="font-serif text-[13px] leading-snug text-ink">
-                                      {variation}
-                                    </p>
-                                  </div>
-                                  {acceptedRefineVariationBySuggestion[s.id] ? (
-                                    <button
-                                      type="button"
-                                      disabled
-                                      className="relative shrink-0 rounded-md border border-border bg-background px-3 py-1.5 text-xs text-ink"
-                                      aria-label={
-                                        acceptedRefineVariationBySuggestion[s.id] === variation
-                                          ? "Accepted variation"
-                                          : "Rejected variation"
-                                      }
-                                    >
-                                      <span className="invisible">Accept</span>
-                                      {acceptedRefineVariationBySuggestion[s.id] === variation ? (
-                                        <Check className="absolute inset-0 m-auto h-3.5 w-3.5" />
-                                      ) : (
-                                        <X className="absolute inset-0 m-auto h-3.5 w-3.5" />
-                                      )}
-                                    </button>
-                                  ) : (
-                                    <button
-                                      type="button"
-                                      onClick={() => handleAcceptVariation(s.id, variation)}
-                                      className="shrink-0 rounded-md border border-border bg-background px-3 py-1.5 text-xs text-ink transition hover:bg-paper"
-                                    >
-                                      Accept
-                                    </button>
-                                  )}
-                                </div>
-                              ))}
+                        <div className="mb-2.5 rounded-md border border-dashed border-border bg-paper/60 p-2.5">
+                          <div className="mb-1 text-[10px] uppercase tracking-wider text-ink-muted">
+                            Proposed
+                          </div>
+                          <p className="font-serif text-[13px] leading-relaxed text-ink">
+                            {s.proposed}
+                          </p>
+                        </div>
+
+                        {!state && (
+                          <div className="grid grid-cols-3 gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => handleAcceptVariation(s.id, s.proposed)}
+                              className="flex items-center justify-center gap-1 rounded-md bg-brand px-2 py-1.5 text-xs font-medium text-brand-foreground transition hover:opacity-90"
+                            >
+                              <Check className="h-3 w-3" /> Accept
+                            </button>
+                            <button
+                              onClick={() => setResolved((r) => ({ ...r, [s.id]: "reject" }))}
+                              className="flex items-center justify-center gap-1 rounded-md border border-border bg-background px-2 py-1.5 text-xs text-ink transition hover:bg-paper"
+                            >
+                              <X className="h-3 w-3" /> Dismiss
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleRefineClick(s.id)}
+                              className={cn(
+                                "flex items-center justify-center gap-1 rounded-md border px-2 py-1.5 text-xs transition",
+                                activeRefineId === s.id
+                                  ? "border-brand bg-brand-muted/30 text-ink"
+                                  : "border-border bg-background text-ink hover:bg-paper",
+                              )}
+                            >
+                              <Sparkles className="h-3 w-3" /> Refine
+                            </button>
+                          </div>
+                        )}
+
+                        {activeRefineId === s.id && (
+                          <div className="mt-3 border-t border-border pt-3">
+                            <div className="mb-1">
+                              <div className="font-serif text-sm font-medium text-ink">
+                                Refine this suggestion
+                              </div>
+                              <div className="text-xs text-ink-muted">
+                                Tell the AI how you'd like to adjust the proposed text.
+                              </div>
                             </div>
 
-                            {(refineVariationSets[s.id]?.length ?? 0) > 1 && (
-                              <div className="mt-3 flex items-center justify-end gap-1 text-xs text-ink-muted">
+                            <div className="relative rounded-md border border-border bg-background px-3 py-2">
+                              <textarea
+                                value={refinePrompt}
+                                onChange={(e) => setRefinePrompt(e.target.value)}
+                                placeholder="E.g., Make it more concise..."
+                                className="min-h-[56px] w-full resize-none bg-transparent text-sm text-ink outline-none placeholder:text-ink-muted/70"
+                              />
                               <button
                                 type="button"
-                                aria-label="Previous regeneration"
-                                disabled={(refineVariationIndex[s.id] ?? 0) === 0}
-                                onClick={() =>
-                                  setRefineVariationIndex((current) => ({
-                                    ...current,
-                                    [s.id]: Math.max((current[s.id] ?? 0) - 1, 0),
-                                  }))
-                                }
-                                className="inline-flex h-4 w-4 items-center justify-center p-0 leading-none text-ink-muted transition hover:text-ink disabled:cursor-not-allowed disabled:opacity-30"
-                                >
-                                  <ChevronLeft className="h-3 w-3" />
+                                onClick={() => handleSubmitRefine(s.id)}
+                                className="absolute bottom-2 right-2 flex h-7 w-7 items-center justify-center rounded-md border border-border bg-background text-brand transition hover:bg-paper"
+                                aria-label="Send refine prompt"
+                              >
+                                <Send className="h-3.5 w-3.5" />
                               </button>
-                                <span className="text-xs font-medium leading-none text-ink-muted transition hover:text-ink">
-                                  {(refineVariationIndex[s.id] ?? 0) + 1}/2
-                                </span>
-                                <button
-                                  type="button"
-                                  aria-label="Next regeneration"
-                                  disabled={(refineVariationIndex[s.id] ?? 0) >= 1}
-                                  onClick={() =>
-                                    setRefineVariationIndex((current) => ({
-                                      ...current,
-                                      [s.id]: 1,
-                                    }))
-                                  }
-                                  className="inline-flex h-4 w-4 items-center justify-center p-0 leading-none text-ink-muted transition hover:text-ink disabled:cursor-not-allowed disabled:opacity-30"
-                                >
-                                  <ChevronRight className="h-3 w-3" />
-                                </button>
+                            </div>
+
+                            {refineVariationSets[s.id] && (
+                              <div className="mt-3">
+                                <div className="mb-2 flex items-center justify-between">
+                                  <div>
+                                    <div className="font-serif text-sm font-medium text-ink">
+                                      Here are 3 variations
+                                    </div>
+                                    <div className="text-xs text-ink-muted">
+                                      Select the one you like best, or refine further.
+                                    </div>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setRefineVariationSets((current) => {
+                                        const suggestion = suggestions.find((item) => item.id === s.id)
+                                        if (!suggestion) {
+                                          return current
+                                        }
+
+                                        const sets = current[s.id] ?? [buildRefineVariations(suggestion.category, 0)]
+
+                                        setRefineVariationIndex((currentIndex) => ({
+                                          ...currentIndex,
+                                          [s.id]: 1,
+                                        }))
+
+                                        if (sets.length >= 2) {
+                                          return current
+                                        }
+
+                                        return {
+                                          ...current,
+                                          [s.id]: [...sets, buildRefineVariations(suggestion.category, 1)],
+                                        }
+                                      })
+                                    }
+                                    className="flex items-center gap-1 text-xs text-ink-muted transition hover:text-ink"
+                                  >
+                                    <RotateCcw className="h-3 w-3" />
+                                    Regenerate
+                                  </button>
+                                </div>
+
+                                <div className="space-y-2">
+                                  {(refineVariationSets[s.id]?.[refineVariationIndex[s.id] ?? 0] ?? []).map((variation) => (
+                                    <div
+                                      key={variation}
+                                      className="flex items-start gap-3 rounded-md border border-border bg-background px-3 py-2.5"
+                                    >
+                                      <div className="min-w-0 flex-1">
+                                        <p className="font-serif text-[13px] leading-snug text-ink">
+                                          {variation}
+                                        </p>
+                                      </div>
+                                      {acceptedRefineVariationBySuggestion[s.id] ? (
+                                        <button
+                                          type="button"
+                                          disabled
+                                          className="relative shrink-0 rounded-md border border-border bg-background px-3 py-1.5 text-xs text-ink"
+                                          aria-label={
+                                            acceptedRefineVariationBySuggestion[s.id] === variation
+                                              ? "Accepted variation"
+                                              : "Rejected variation"
+                                          }
+                                        >
+                                          <span className="invisible">Accept</span>
+                                          {acceptedRefineVariationBySuggestion[s.id] === variation ? (
+                                            <Check className="absolute inset-0 m-auto h-3.5 w-3.5" />
+                                          ) : (
+                                            <X className="absolute inset-0 m-auto h-3.5 w-3.5" />
+                                          )}
+                                        </button>
+                                      ) : (
+                                        <button
+                                          type="button"
+                                          onClick={() => handleAcceptVariation(s.id, variation)}
+                                          className="shrink-0 rounded-md border border-border bg-background px-3 py-1.5 text-xs text-ink transition hover:bg-paper"
+                                        >
+                                          Accept
+                                        </button>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+
+                                {(refineVariationSets[s.id]?.length ?? 0) > 1 && (
+                                  <div className="mt-3 flex items-center justify-end gap-1 text-xs text-ink-muted">
+                                    <button
+                                      type="button"
+                                      aria-label="Previous regeneration"
+                                      disabled={(refineVariationIndex[s.id] ?? 0) === 0}
+                                      onClick={() =>
+                                        setRefineVariationIndex((current) => ({
+                                          ...current,
+                                          [s.id]: Math.max((current[s.id] ?? 0) - 1, 0),
+                                        }))
+                                      }
+                                      className="inline-flex h-4 w-4 items-center justify-center p-0 leading-none text-ink-muted transition hover:text-ink disabled:cursor-not-allowed disabled:opacity-30"
+                                    >
+                                      <ChevronLeft className="h-3 w-3" />
+                                    </button>
+                                    <span className="text-xs font-medium leading-none text-ink-muted transition hover:text-ink">
+                                      {(refineVariationIndex[s.id] ?? 0) + 1}/2
+                                    </span>
+                                    <button
+                                      type="button"
+                                      aria-label="Next regeneration"
+                                      disabled={(refineVariationIndex[s.id] ?? 0) >= 1}
+                                      onClick={() =>
+                                        setRefineVariationIndex((current) => ({
+                                          ...current,
+                                          [s.id]: 1,
+                                        }))
+                                      }
+                                      className="inline-flex h-4 w-4 items-center justify-center p-0 leading-none text-ink-muted transition hover:text-ink disabled:cursor-not-allowed disabled:opacity-30"
+                                    >
+                                      <ChevronRight className="h-3 w-3" />
+                                    </button>
+                                  </div>
+                                )}
                               </div>
                             )}
                           </div>
                         )}
                       </div>
-                    )}
-                  </div>
-                );
-              })}
+                    );
+                  })}
+                </div>
+              </div>
             </div>
-          </div>
+          )}
         </aside>
       </main>
 
@@ -1159,6 +1295,7 @@ export default function InfluenceDashboard() {
             />
             <button
               type="button"
+              onClick={handleSubmitSectionRefine}
               className="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-md border border-border bg-background p-0 leading-none text-brand transition hover:bg-paper"
               aria-label="Send refine prompt"
             >
