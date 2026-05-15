@@ -452,6 +452,7 @@ export default function InfluenceDashboard() {
   };
 
   const handleExitComposerSection = () => {
+    const acceptedVariation = composerSectionAcceptedVariation;
     appliedSuggestionVariationsById.current = {};
     setResolved({});
     setActiveRefineId(null);
@@ -465,7 +466,9 @@ export default function InfluenceDashboard() {
     setRefineSectionPrompt("");
     setAcceptedHighlight(null);
     setRefineSelectionHighlight(null);
-    setDocumentText(sampleText);
+    if (!acceptedVariation) {
+      setDocumentText(sampleText);
+    }
     setComposerSectionVisible(false);
     setComposerSectionVariationSets([]);
     setComposerSectionVariationIndex(0);
@@ -1303,18 +1306,20 @@ export default function InfluenceDashboard() {
             )}
           </div>
 
-          <div className="border-t border-border/70 px-5 py-4">
-            <div className="flex justify-end">
-              <button
-                type="button"
-                onClick={handleExitComposerSection}
-                className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 text-xs text-ink-muted transition hover:border-brand/40 hover:text-ink"
-              >
-                <ChevronLeft className="h-3 w-3" />
-                Exit
-              </button>
+          {composerSectionVisible && (
+            <div className="border-t border-border/70 px-5 py-4">
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={handleExitComposerSection}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 text-xs text-ink-muted transition hover:border-brand/40 hover:text-ink"
+                >
+                  <ChevronLeft className="h-3 w-3" />
+                  Exit
+                </button>
+              </div>
             </div>
-          </div>
+          )}
         </aside>
       </main>
 
