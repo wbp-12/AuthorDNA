@@ -15,6 +15,13 @@ export type MetricCategory = {
   subMetrics: MetricSubMetric[]
 }
 
+export type UserBaseline = {
+  name: string
+  samplesAnalyzed: number
+  wordsProfiled: number
+  voiceSummary: string
+}
+
 export type SentenceDiffConfig = {
   mode?: SentenceDiffMode
 }
@@ -40,16 +47,13 @@ export type AuthorDnaSuggestion = {
 
 export type AuthorDnaDataset = {
   schemaVersion: string
+  sampleText?: string
   document: {
     title: string
     paragraphs: string[]
   }
-  profile: {
-    name: string
-    samplesAnalyzed: number
-    wordsProfiled: number
-    voiceSummary: string
-  }
+  userBaseline?: UserBaseline
+  profile: UserBaseline
   metrics: MetricCategory[]
   suggestions: AuthorDnaSuggestion[]
 }
@@ -63,6 +67,17 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function toStringArray(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : []
+}
+
+function toParagraphsFromSampleText(value: unknown): string[] {
+  if (typeof value !== 'string') {
+    return []
+  }
+
+  return value
+    .split(/\n\s*\n/g)
+    .map((paragraph) => paragraph.trim())
+    .filter(Boolean)
 }
 
 function toMetricSubMetrics(value: unknown): MetricSubMetric[] {
@@ -168,27 +183,30 @@ export function normalizeAuthorDnaDataset(raw: unknown): AuthorDnaDataset {
   }
 
   const schemaVersion = typeof raw.schemaVersion === 'string' ? raw.schemaVersion : '1.0'
+  const sampleText = typeof raw.sampleText === 'string' ? raw.sampleText : undefined
   const documentRecord = isRecord(raw.document) ? raw.document : null
-  const profileRecord = isRecord(raw.profile) ? raw.profile : null
+  const baselineRecord = isRecord(raw.userBaseline) ? raw.userBaseline : isRecord(raw.profile) ? raw.profile : null
   const documentTitle = documentRecord && typeof documentRecord.title === 'string' ? documentRecord.title : 'Writing in the age of AI'
-  const documentParagraphs = documentRecord ? toStringArray(documentRecord.paragraphs) : []
-  const name = profileRecord && typeof profileRecord.name === 'string' ? profileRecord.name : 'Unknown'
-  const samplesAnalyzed = profileRecord && typeof profileRecord.samplesAnalyzed === 'number' ? profileRecord.samplesAnalyzed : 0
-  const wordsProfiled = profileRecord && typeof profileRecord.wordsProfiled === 'number' ? profileRecord.wordsProfiled : 0
-  const voiceSummary = profileRecord && typeof profileRecord.voiceSummary === 'string' ? profileRecord.voiceSummary : ''
+  const documentParagraphs =
+    documentRecord && toStringArray(documentRecord.paragraphs).length > 0
+      ? toStringArray(documentRecord.paragraphs)
+      : toParagraphsFromSampleText(sampleText)
+  const userBaseline: UserBaseline = {
+    name: baselineRecord && typeof baselineRecord.name === 'string' ? baselineRecord.name : 'Unknown',
+    samplesAnalyzed: baselineRecord && typeof baselineRecord.samplesAnalyzed === 'number' ? baselineRecord.samplesAnalyzed : 0,
+    wordsProfiled: baselineRecord && typeof baselineRecord.wordsProfiled === 'number' ? baselineRecord.wordsProfiled : 0,
+    voiceSummary: baselineRecord && typeof baselineRecord.voiceSummary === 'string' ? baselineRecord.voiceSummary : '',
+  }
 
   return {
     schemaVersion,
+    sampleText: sampleText ?? documentParagraphs.join('\n\n'),
     document: {
       title: documentTitle,
       paragraphs: documentParagraphs,
     },
-    profile: {
-      name,
-      samplesAnalyzed,
-      wordsProfiled,
-      voiceSummary,
-    },
+    userBaseline,
+    profile: userBaseline,
     metrics: toMetrics(raw.metrics),
     suggestions: toSuggestions(raw.suggestions),
   }

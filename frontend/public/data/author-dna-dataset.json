@@ -1,14 +1,21 @@
 {
   "schemaVersion": "1.0",
+  "sampleText": "It seems that the proliferation of artificial intelligence in academic writing has fundamentally transformed how scholars approach their craft. The technology has moved quickly from a distant novelty to an ordinary tool, and that shift has changed how researchers draft, revise, and evaluate their work.\n\nThe discussion is no longer only about whether AI should be used. It is about how it should be used, where its limits should be drawn, and how writers can preserve clarity, ownership, and voice while still benefiting from the speed it offers.\n\nThe rise of these systems has also altered the rhythm of scholarly composition. Writers can now generate summaries, test outlines, and compare phrasings in seconds, yet those efficiencies do not remove the need for judgment. In many cases, they make judgment more important, because the first clear answer is not always the most precise one.\n\nResearchers across disciplines are grappling with questions of authorship, originality, and intellectual integrity in ways that were perhaps unimaginable just a decade ago. Some scholars see the tools as a practical extension of writing labor, while others worry that the convenience of automation may flatten the specificity of academic voice.\n\nFurthermore, the integration of these tools into the writing process has perhaps blurred the boundaries between human creativity and machine assistance, raising essential questions about the future of scholarly communication. Universities, journals, and individual writers are still deciding how to define responsible use, and those decisions will shape the norms that follow.",
   "document": {
     "title": "Writing in the age of AI",
     "paragraphs": [
       "It seems that the proliferation of artificial intelligence in academic writing has fundamentally transformed how scholars approach their craft. The technology has moved quickly from a distant novelty to an ordinary tool, and that shift has changed how researchers draft, revise, and evaluate their work.",
+      "The discussion is no longer only about whether AI should be used. It is about how it should be used, where its limits should be drawn, and how writers can preserve clarity, ownership, and voice while still benefiting from the speed it offers.",
       "The rise of these systems has also altered the rhythm of scholarly composition. Writers can now generate summaries, test outlines, and compare phrasings in seconds, yet those efficiencies do not remove the need for judgment. In many cases, they make judgment more important, because the first clear answer is not always the most precise one.",
       "Researchers across disciplines are grappling with questions of authorship, originality, and intellectual integrity in ways that were perhaps unimaginable just a decade ago. Some scholars see the tools as a practical extension of writing labor, while others worry that the convenience of automation may flatten the specificity of academic voice.",
-      "Furthermore, the integration of these tools into the writing process has perhaps blurred the boundaries between human creativity and machine assistance, raising essential questions about the future of scholarly communication. Universities, journals, and individual writers are still deciding how to define responsible use, and those decisions will shape the norms that follow.",
-      "For that reason, the discussion is no longer only about whether AI should be used. It is about how it should be used, where its limits should be drawn, and how writers can preserve clarity, ownership, and voice while still benefiting from the speed it offers."
+      "Furthermore, the integration of these tools into the writing process has perhaps blurred the boundaries between human creativity and machine assistance, raising essential questions about the future of scholarly communication. Universities, journals, and individual writers are still deciding how to define responsible use, and those decisions will shape the norms that follow."
     ]
+  },
+  "userBaseline": {
+    "name": "Eleanor Vance",
+    "samplesAnalyzed": 47,
+    "wordsProfiled": 38420,
+    "voiceSummary": "Direct, declarative, sparing with hedges. Favors em-dashes and short paragraphs."
   },
   "profile": {
     "name": "Eleanor Vance",
@@ -20,7 +27,7 @@
     {
       "id": "architecture",
       "name": "Sentence Flow",
-      "score": 42,
+      "score": 78,
       "observation": "Your sentences are typically short and direct. This paragraph has several long, complex sentences.",
       "subMetrics": [
         { "label": "Mean sentence length", "userValue": "14 words", "textValue": "31 words", "aligned": false },
@@ -32,7 +39,7 @@
     {
       "id": "word",
       "name": "Word Choice",
-      "score": 38,
+      "score": 74,
       "observation": "You rarely use formal academic vocabulary. This passage uses several formal terms like 'proliferation,' 'unprecedented,' and 'unimaginable.'",
       "subMetrics": [
         { "label": "Lexical formality", "userValue": "0.18", "textValue": "0.41", "aligned": false },
@@ -44,7 +51,7 @@
     {
       "id": "structure",
       "name": "Structure",
-      "score": 55,
+      "score": 82,
       "observation": "You usually write short paragraphs with clear transitions. This is a single dense paragraph.",
       "subMetrics": [
         { "label": "Mean paragraph length", "userValue": "3.1 sent.", "textValue": "5 sent.", "aligned": false },
@@ -55,7 +62,7 @@
     {
       "id": "tone",
       "name": "Tone",
-      "score": 31,
+      "score": 71,
       "observation": "You typically write with confidence. This passage uses hedging language like 'seems,' 'perhaps,' and 'may have.'",
       "subMetrics": [
         { "label": "Hedge density", "userValue": "0.4%", "textValue": "1.9%", "aligned": false },
@@ -67,7 +74,7 @@
     {
       "id": "punctuation",
       "name": "Punctuation",
-      "score": 68,
+      "score": 86,
       "observation": "You often use em-dashes for asides. This paragraph has none.",
       "subMetrics": [
         { "label": "Em-dash / 1k words", "userValue": "8.4", "textValue": "0", "aligned": false },
@@ -79,64 +86,49 @@
   ],
   "suggestions": [
     {
-      "id": "s1",
+      "id": "s2",
       "category": "Tone",
       "severity": "high",
       "excerpt": "It seems that the proliferation of artificial intelligence...",
       "paragraphIndex": 0,
       "targetText": "It seems that the proliferation of artificial intelligence in academic writing has fundamentally transformed how scholars approach their craft.",
-      "observation": "You typically write with confidence. The opener hedges with 'seems.'",
+      "observation": "You typically write with confidence. The opener hedges with 'seems,' which softens the authority of the claim.",
       "tradeoff": {
-        "gain": "Stronger, more declarative voice that matches your baseline.",
-        "loss": "Softer, more cautious framing that invites disagreement."
+        "gain": "A firmer opening claim.",
+        "loss": "Less cautious framing."
       },
       "proposed": "The proliferation of artificial intelligence in academic writing has fundamentally transformed how scholars approach their craft.",
       "sentenceDiff": { "mode": "word" }
     },
     {
-      "id": "s2",
-      "category": "Sentence Flow",
-      "severity": "high",
-      "excerpt": "The technology, which has rapidly evolved over the past several years, presents both unprecedented opportunities and significant challenges...",
-      "paragraphIndex": 0,
-      "targetText": "The technology has moved quickly from a distant novelty to an ordinary tool, and that shift has changed how researchers draft, revise, and evaluate their work.",
-      "observation": "You typically write in shorter, more self-contained statements. This sentence unfolds across multiple clauses, which makes it feel more reflective.",
-      "tradeoff": {
-        "gain": "Shorter, punchier rhythm that reads like your past work.",
-        "loss": "Some nuance in the parenthetical clause about timing."
-      },
-      "proposed": "The technology has evolved rapidly. It brings real opportunities — and challenges worth weighing.",
-      "sentenceDiff": { "mode": "block" }
-    },
-    {
       "id": "s3",
       "category": "Word Choice",
       "severity": "medium",
-      "excerpt": "...questions of authorship, originality, and intellectual integrity...",
-      "paragraphIndex": 2,
-      "targetText": "questions of authorship, originality, and intellectual integrity",
-      "observation": "Three formal terms in a row. You usually pick one and move on.",
+      "excerpt": "...a practical extension of writing labor...",
+      "paragraphIndex": 3,
+      "targetText": "Some scholars see the tools as a practical extension of writing labor, while others worry that the convenience of automation may flatten the specificity of academic voice.",
+      "observation": "You typically prefer more natural and direct phrasing. “Writing labor” feels more theoretical than your normal vocabulary.",
       "tradeoff": {
         "gain": "Closer to your everyday register.",
         "loss": "Reduced rhetorical weight in a list of abstract concepts."
       },
-      "proposed": "Researchers across disciplines are grappling with questions of authorship, originality, and honesty in ways that were perhaps unimaginable just a decade ago.",
+      "proposed": "Some scholars see the tools as a practical extension of the writing process, while others worry that the convenience of automation may flatten the specificity of academic voice.",
       "proposedPreview": "...questions of authorship, originality, and honesty...",
       "sentenceDiff": { "mode": "word" }
     },
     {
       "id": "s4",
-      "category": "Structure",
-      "severity": "medium",
-      "excerpt": "Researchers across disciplines are grappling with questions of authorship, originality, and intellectual integrity...",
+      "category": "Sentence Flow",
+      "severity": "high",
+      "excerpt": "...and compare phrasings in seconds, yet those efficiencies do not remove the need for judgment.",
       "paragraphIndex": 2,
-      "targetText": "Researchers across disciplines are grappling with questions of authorship, originality, and intellectual integrity in ways that were perhaps unimaginable just a decade ago.",
+      "targetText": "Writers can now generate summaries, test outlines, and compare phrasings in seconds, yet those efficiencies do not remove the need for judgment.",
       "observation": "You typically separate major moves more clearly. Here, the point stays embedded in the paragraph.",
       "tradeoff": {
         "gain": "Clearer structural pacing and a more deliberate progression.",
         "loss": "A slightly less continuous argumentative flow."
       },
-      "proposed": "Researchers across disciplines are grappling with questions of authorship, originality, and intellectual integrity. These questions are now shaping academic practice in concrete ways.",
+      "proposed": "Writers can now generate summaries, test outlines, and compare phrasings in seconds. Yet, those efficiencies do not remove the need for judgment.",
       "sentenceDiff": { "mode": "block" }
     },
     {
@@ -144,7 +136,7 @@
       "category": "Punctuation",
       "severity": "low",
       "excerpt": "Furthermore, the integration of these tools into the writing process has perhaps blurred the boundaries...",
-      "paragraphIndex": 3,
+      "paragraphIndex": 4,
       "targetText": "Furthermore, the integration of these tools into the writing process has perhaps blurred the boundaries between human creativity and machine assistance, raising essential questions about the future of scholarly communication.",
       "observation": "You usually use em-dashes for asides. Here, the aside is tucked into commas instead.",
       "tradeoff": {
@@ -160,7 +152,7 @@
       "category": "Tone",
       "severity": "medium",
       "excerpt": "The rise of these systems has also altered the rhythm of scholarly composition...",
-      "paragraphIndex": 1,
+      "paragraphIndex": 2,
       "targetText": "The rise of these systems has also altered the rhythm of scholarly composition.",
       "observation": "You usually sound more direct. This line keeps a more detached, analytical distance.",
       "tradeoff": {
@@ -175,7 +167,7 @@
       "category": "Word Choice",
       "severity": "high",
       "excerpt": "...the convenience of automation may flatten the specificity of academic voice.",
-      "paragraphIndex": 2,
+      "paragraphIndex": 3,
       "targetText": "Some scholars see the tools as a practical extension of writing labor, while others worry that the convenience of automation may flatten the specificity of academic voice.",
       "observation": "You usually choose plainer verbs and nouns. This phrasing leans more abstract than your baseline.",
       "tradeoff": {
@@ -191,7 +183,7 @@
       "category": "Structure",
       "severity": "low",
       "excerpt": "In many cases, they make judgment more important, because the first clear answer is not always the most precise one.",
-      "paragraphIndex": 1,
+      "paragraphIndex": 2,
       "targetText": "In many cases, they make judgment more important, because the first clear answer is not always the most precise one.",
       "observation": "You typically end paragraphs more cleanly. This sentence would land better with more separation around it.",
       "tradeoff": {
@@ -206,7 +198,7 @@
       "category": "Tone",
       "severity": "low",
       "excerpt": "Some scholars see the tools as a practical extension of writing labor, while others worry that the convenience of automation may flatten the specificity of academic voice.",
-      "paragraphIndex": 2,
+      "paragraphIndex": 3,
       "targetText": "Some scholars see the tools as a practical extension of writing labor, while others worry that the convenience of automation may flatten the specificity of academic voice.",
       "observation": "You usually write with more certainty. This sentence leaves more hedging and distance in place.",
       "tradeoff": {
@@ -221,7 +213,7 @@
       "category": "Sentence Flow",
       "severity": "medium",
       "excerpt": "Writers can now generate summaries, test outlines, and compare phrasings in seconds, yet those efficiencies do not remove the need for judgment.",
-      "paragraphIndex": 1,
+      "paragraphIndex": 2,
       "targetText": "Writers can now generate summaries, test outlines, and compare phrasings in seconds, yet those efficiencies do not remove the need for judgment.",
       "observation": "You typically break dense ideas earlier. This sentence keeps both clauses together, which makes it feel heavier.",
       "tradeoff": {
@@ -236,7 +228,7 @@
       "category": "Word Choice",
       "severity": "medium",
       "excerpt": "Universities, journals, and individual writers are still deciding how to define responsible use...",
-      "paragraphIndex": 3,
+      "paragraphIndex": 4,
       "targetText": "Universities, journals, and individual writers are still deciding how to define responsible use, and those decisions will shape the norms that follow.",
       "observation": "You usually prefer more direct phrasing. This version is accurate, but more formal and generalized than your norm.",
       "tradeoff": {
@@ -252,7 +244,7 @@
       "category": "Punctuation",
       "severity": "low",
       "excerpt": "It is about how it should be used, where its limits should be drawn, and how writers can preserve clarity, ownership, and voice...",
-      "paragraphIndex": 4,
+      "paragraphIndex": 1,
       "targetText": "It is about how it should be used, where its limits should be drawn, and how writers can preserve clarity, ownership, and voice while still benefiting from the speed it offers.",
       "observation": "You usually mark pauses with em-dashes. This sentence relies on commas instead of your usual punctuation pattern.",
       "tradeoff": {
@@ -268,7 +260,7 @@
       "category": "Structure",
       "severity": "medium",
       "excerpt": "The rise of these systems has also altered the rhythm of scholarly composition.",
-      "paragraphIndex": 1,
+      "paragraphIndex": 2,
       "targetText": "The rise of these systems has also altered the rhythm of scholarly composition.",
       "observation": "You typically use shorter structural units. This idea is sitting inside the paragraph rather than guiding the transition.",
       "tradeoff": {
@@ -282,9 +274,9 @@
       "id": "s15",
       "category": "Tone",
       "severity": "high",
-      "excerpt": "For that reason, the discussion is no longer only about whether AI should be used.",
-      "paragraphIndex": 4,
-      "targetText": "For that reason, the discussion is no longer only about whether AI should be used.",
+      "excerpt": "The discussion is no longer only about whether AI should be used.",
+      "paragraphIndex": 1,
+      "targetText": "The discussion is no longer only about whether AI should be used.",
       "observation": "You usually sound more decisive. This line is clear, but it stays slightly more tentative than your baseline.",
       "tradeoff": {
         "gain": "More confident closing cadence.",
@@ -298,8 +290,8 @@
       "category": "Sentence Flow",
       "severity": "low",
       "excerpt": "The discussion is no longer only about whether AI should be used. It is about how it should be used...",
-      "paragraphIndex": 4,
-      "targetText": "It is about how it should be used, where its limits should be drawn, and how writers can preserve clarity, ownership, and voice while still benefiting from the speed it offers.",
+      "paragraphIndex": 1,
+      "targetText": "The discussion is no longer only about whether AI should be used. It is about how it should be used, where its limits should be drawn, and how writers can preserve clarity, ownership, and voice while still benefiting from the speed it offers.",
       "observation": "You usually keep closings more compact. This repetition is deliberate, but it reads a little slower than your norm.",
       "tradeoff": {
         "gain": "Quicker, more forceful closing rhythm.",
@@ -308,28 +300,13 @@
       "proposed": "The discussion is no longer about whether AI should be used. It is about how it should be used.",
       "sentenceDiff": { "mode": "block" }
     },
-    {
-      "id": "s17",
-      "category": "Word Choice",
-      "severity": "low",
-      "excerpt": "This essay uses several terms like 'novelty,' 'specificity,' and 'ownership.'",
-      "paragraphIndex": 4,
-      "targetText": "It is about how it should be used, where its limits should be drawn, and how writers can preserve clarity, ownership, and voice while still benefiting from the speed it offers.",
-      "observation": "You usually simplify a few of these terms. Here, the wording stays a bit more abstract than your usual register.",
-      "tradeoff": {
-        "gain": "Cleaner everyday diction.",
-        "loss": "A little less conceptual precision."
-      },
-      "proposed": "This essay uses several terms like 'change,' 'clarity,' and 'ownership.'",
-      "proposedPreview": "This essay uses several terms like 'change,' 'clarity,' and 'ownership.'",
-      "sentenceDiff": { "mode": "word" }
-    },
+
     {
       "id": "s18",
       "category": "Structure",
       "severity": "low",
       "excerpt": "Writers can now generate summaries, test outlines, and compare phrasings in seconds.",
-      "paragraphIndex": 1,
+      "paragraphIndex": 2,
       "targetText": "Writers can now generate summaries, test outlines, and compare phrasings in seconds, yet those efficiencies do not remove the need for judgment.",
       "observation": "You typically let important claims stand apart more clearly. Here, the sentence stays embedded in the flow.",
       "tradeoff": {
@@ -344,8 +321,8 @@
       "category": "Punctuation",
       "severity": "low",
       "excerpt": "The rise of these systems has also altered the rhythm of scholarly composition.",
-      "paragraphIndex": 3,
-      "targetText": "Universities, journals, and individual writers are still deciding how to define responsible use, and those decisions will shape the norms that follow.",
+      "paragraphIndex": 2,
+      "targetText": "The rise of these systems has also altered the rhythm of scholarly composition.",
       "observation": "You usually lean on stronger punctuation breaks. This line uses a softer pause than your normal style.",
       "tradeoff": {
         "gain": "A more precise and balanced pause.",

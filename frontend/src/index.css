@@ -1,6 +1,5 @@
-@import "tailwindcss" source(none);
+@import "tailwindcss";
 @import "tw-animate-css";
-@import url('/fonts/inter.css');
 @source "../src";
 
 @custom-variant dark (&:is([data-theme="dark"] *));
@@ -55,12 +54,13 @@
   --color-brand: var(--brand);
   --color-brand-foreground: var(--brand-foreground);
   --color-brand-muted: var(--brand-muted);
+  --color-highlight: var(--highlight);
   --color-ink: var(--ink);
   --color-ink-muted: var(--ink-muted);
   --color-paper: var(--paper);
   --color-paper-foreground: var(--paper-foreground);
   --shadow-soft: var(--shadow-soft);
-  --font-serif: ui-serif, Georgia, "Iowan Old Style", "Apple Garamond", Baskerville, "Times New Roman", serif;
+  --font-serif: ui-serif, Georgia, "Iowan Old Style", "Apple Garamond", "Noto Serif SC", Baskerville, "Times New Roman", serif;
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -70,18 +70,24 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
   --font-sans: -apple-system, BlinkMacSystemFont, 'InterVariable','Inter', 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  --scrollbar-track: oklch(0.95 0.01 90 / 0.72);
+  --scrollbar-thumb: oklch(0.72 0.02 60 / 0.85);
+  --scrollbar-thumb-hover: oklch(0.62 0.03 60 / 0.95);
 
 }
 
 :root {
   --radius: 0.75rem;
+  --gradient-background: radial-gradient(circle_at_top_left, rgba(255,165,70,0.16), transparent 38%), linear-gradient(135deg, rgba(255,245,230,0.6), transparent 45%, rgba(15,23,42,0.02) 100%);
   --background: oklch(0.99 0.005 90);
   --foreground: oklch(0.18 0.02 60);
   --brand: oklch(0.55 0.18 35);
   --brand-foreground: oklch(0.99 0.005 90);
   --brand-muted: oklch(0.92 0.04 60);
+  --component-hover: oklch(72.006% 0.1764 51.349 / 0.301);
   --ink: oklch(0.22 0.02 60);
   --ink-muted: oklch(0.5 0.02 60);
+  --highlight: var(--brand);
   /* Paper must always be white background with black text (hardcoded requirement) */
   --paper: #ffffff;
   --paper-foreground: #000000;
@@ -97,8 +103,8 @@
   --secondary-foreground: oklch(0.208 0.042 265.755);
   --muted: oklch(0.968 0.007 247.896);
   --muted-foreground: oklch(0.554 0.046 257.417);
-  --accent: oklch(0.968 0.007 247.896);
-  --accent-foreground: oklch(0.208 0.042 265.755);
+  --accent: color-mix(var(--brand), transparent 70%);
+  --accent-foreground: var(--foreground);
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.984 0.003 247.858);
   --border: oklch(0.929 0.013 255.508);
@@ -117,18 +123,23 @@
   --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
   --sidebar-border: oklch(0.929 0.013 255.508);
   --sidebar-ring: oklch(0.704 0.04 256.788);
+  --scrollbar-track: oklch(0.94 0.01 90 / 0.7);
+  --scrollbar-thumb: oklch(0.75 0.02 60 / 0.9);
+  --scrollbar-thumb-hover: oklch(0.66 0.03 60 / 0.98);
 }
 
 :root[data-theme="dark"] {
-  /* Dark theme: use neutral deep gray background and white foreground. Avoid blue-tinted backgrounds. */
+  /* Dark theme: warm deep background tuned for orange accents */
+  --gradient-background: radial-gradient(circle_at_top_left, rgba(40,20,8,0.6), transparent 38%), linear-gradient(135deg, rgba(10,8,6,0.7), rgba(30,16,8,0.6));
   --background: oklch(0.18 0.003 67);
   --foreground: oklch(0.98 0.02 0);
   --brand: oklch(0.65 0.16 38);
   --brand-foreground: oklch(0.12 0.01 0);
   --brand-muted: oklch(0.22 0.03 35);
+  --component-hover: oklch(26.448% 0.00003 271.152 / 0.5);
   --gradient-brand: linear-gradient(135deg, oklch(0.62 0.18 30), oklch(0.72 0.14 55));
   --shadow-soft: 0 1px 2px oklch(0 0 0 / 0.28), 0 10px 28px oklch(0 0 0 / 0.24);
-  --card: oklch(0.12 0.01 0);
+  --card: oklch(24.314% 0.00184 106.772);
   --card-foreground: oklch(0.98 0.01 0);
   --popover: oklch(0.12 0.01 0);
   --popover-foreground: oklch(0.98 0.01 0);
@@ -139,12 +150,11 @@
   --paper-foreground: #000000;
   --ink: oklch(0.95 0.02 0);
   --ink-muted: oklch(0.7 0.02 60);
+  --highlight: white;
   --secondary: oklch(0.92 0.04 260);
   --secondary-foreground: oklch(0.98 0.01 0);
   --muted: oklch(0.16 0.02 0);
   --muted-foreground: oklch(0.7 0.02 0);
-  --accent: oklch(0.92 0.04 260);
-  --accent-foreground: oklch(0.98 0.01 0);
   --destructive: oklch(0.55 0.22 27);
   --destructive-foreground: oklch(0.98 0.01 0);
   --border: oklch(1 0 0 / 12%);
@@ -163,6 +173,9 @@
   --sidebar-accent-foreground: oklch(0.98 0.01 0);
   --sidebar-border: oklch(1 0 0 / 12%);
   --sidebar-ring: oklch(0.55 0.02 0);
+  --scrollbar-track: oklch(0.22 0.01 0 / 0.72);
+  --scrollbar-thumb: oklch(0.48 0.02 0 / 0.86);
+  --scrollbar-thumb-hover: oklch(0.58 0.02 0 / 0.98);
 }
 
 /* Outline / highlight variables */
@@ -176,13 +189,13 @@
 
 /* Application background gradients (semantic) */
 :root {
-  --app-bg-gradient: linear-gradient(180deg, #f5f7fb 0%, #eef2f7 48%, #e8edf4 100%);
-  --app-top-gradient: radial-gradient(circle at top, rgba(185,208,255,0.36), transparent 36%);
+  --app-bg-gradient: linear-gradient(180deg, #fffaf5 0%, #fff4ed 48%, #fff0e6 100%);
+  --app-top-gradient: radial-gradient(circle at top, rgba(255,200,140,0.36), transparent 36%);
 }
 
 :root[data-theme="dark"] {
-  --app-bg-gradient: linear-gradient(180deg, #0b0f13 0%, #0b0f13 48%, #0b0f13 100%);
-  --app-top-gradient: radial-gradient(circle at top, rgba(0,0,0,0.5), transparent 36%);
+  --app-bg-gradient: linear-gradient(180deg, #1f1d1b 0%, #0f0f0e 48%, #1a1918 100%);
+  --app-top-gradient: radial-gradient(circle at top, rgba(31, 22, 16, 0.5), transparent 36%);
 }
 
 /* Category color variables (semantic) */
@@ -243,10 +256,40 @@
 @layer base {
   * {
     border-color: var(--color-border);
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+    scrollbar-width: thin;
+  }
+
+  *::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background-color: var(--scrollbar-thumb);
+    border: 3px solid var(--scrollbar-track);
+    border-radius: 9999px;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background-color: var(--scrollbar-thumb-hover);
   }
 
   html {
     font-family: var(--font-sans);
+    color-scheme: light;
+  }
+
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+  }
+
+  :root[data-theme="dark"] body {
+    color-scheme: dark;
   }
 
   body {
@@ -255,3 +298,27 @@
     font-family: var(--font-sans);
   }
 }
+
+@layer utilities {
+  .editor-highlight-pulse {
+    transform-origin: center;
+    animation: editor-highlight-pulse 780ms cubic-bezier(0.2, 0.8, 0.2, 1);
+    display: inline-block;
+  }
+}
+
+@keyframes editor-highlight-pulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--color-brand) 16%, transparent);
+  }
+  45% {
+    transform: scale(1.035);
+    box-shadow: 0 0 0 8px color-mix(in oklab, var(--color-brand) 10%, transparent);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--color-brand) 0%, transparent);
+  }
+}
+

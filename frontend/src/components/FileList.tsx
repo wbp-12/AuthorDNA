@@ -14,16 +14,16 @@ function FileRow({ file }: { file: UploadedFileInfo }) {
     <div className="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 shadow-soft transition hover:border-brand/40">
       <FileText className="h-5 w-5 shrink-0 text-brand" />
       <div className="min-w-0 flex-1">
-        <p className="truncate font-serif text-sm text-ink">{file.name}</p>
-        <p className="text-xs text-ink-muted">{formatFileSize(file.size)}</p>
+        <p className="truncate font-serif text-sm text-foreground">{file.name}</p>
+        <p className="text-xs text-foreground/50">{formatFileSize(file.size)}</p>
       </div>
-      <span className="shrink-0 rounded-full border border-border bg-brand/30 px-2.5 py-0.5 text-[11px] font-medium uppercase text-ink-muted">
+      <span className="shrink-0 rounded-full border border-border bg-background px-2.5 py-0.5 text-[11px] font-medium uppercase text-foreground/50">
         {formatType(file.name)}
       </span>
       <button
         type="button"
         onClick={() => removeFile(file.id)}
-        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-ink-muted transition hover:bg-paper hover:text-ink"
+        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-foreground/50 transition hover:bg-background hover:text-foreground"
         aria-label={`Remove ${file.name}`}
       >
         <X className="h-4 w-4" />

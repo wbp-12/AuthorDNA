@@ -46,12 +46,12 @@
 
 每个元素表示一条改写建议：
 
-- `id`: 稳定标识。
+- `id`: 稳定标识，作为一种排序依据（默认排序依据是目标句顺序）。
 - `category`: 建议所属维度。
 - `severity`: `low | medium | high`。
-- `excerpt`: 原文侧栏摘要，只用于右侧建议卡片展示。
+- `excerpt`: 原文侧栏摘要（显示状态的目标句），只用于右侧建议卡片展示。
 - `paragraphIndex`: 该建议属于正文中的第几个段落，从 0 开始。
-- `targetText`: 原文中要定位和替换的完整文本。
+- `targetText`: 原文中要定位和替换的完整文本（目标句）。
 - `observation`: 建议说明。
 - `tradeoff.gain`: 接受建议后的收益。
 - `tradeoff.loss`: 接受建议后的代价。

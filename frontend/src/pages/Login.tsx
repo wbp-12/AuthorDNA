@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { BookOpenText, KeyRound, UserRound } from 'lucide-react'
+import { ArrowRight, KeyRound, Sparkles, UserRound } from 'lucide-react'
 
 import { FloatingPageTools } from '@/components/FloatingPageTools'
+import { FloatingThemeToggle } from '@/components/FloatingThemeToggle'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -16,9 +17,10 @@ import {
 } from '@/domain-types'
 import { useMockSystem } from '@/hooks/useMockSystem'
 import type { MockResultOption, PageEventDefinition } from '@/lib/mock-types'
+import { useAdminSession } from '@/stores/use-admin-session'
 
-const pageName = '管理员登录页'
-const route = '/library/login'
+const pageName = 'AuthorDNA 登录页'
+const route = '/login'
 
 type LoginResultId = 'login-success' | 'login-password-error' | 'login-account-error'
 type LoginMockOption = MockResultOption<LoginResultId, AdminLoginResponse>
@@ -27,18 +29,18 @@ const mockOptions: LoginMockOption[] = [
   {
     id: 'login-success',
     title: '登录成功',
-    description: '账号密码验证通过，返回 AdminLoginResponse 成功结果并跳转至管理员后台首页。',
+    description: '账号密码验证通过，返回成功结果并进入 AuthorDNA 工作台。',
     badge: 'success',
-    noticeMessage: '登录成功，正在进入管理员后台首页。',
+    noticeMessage: '登录成功，正在进入 AuthorDNA 工作台。',
     payload: {
       accountStatus: AdminAccountStatuses.Active,
-      redirectTo: '/library/admin/dashboard',
+      redirectTo: '/workspace/home',
     },
   },
   {
     id: 'login-password-error',
     title: '密码错误',
-    description: '密码校验失败，返回 AdminLoginResponse 失败结果并在表单下方显示错误提示。',
+    description: '密码校验失败，返回失败结果并在表单下方显示错误提示。',
     badge: 'error',
     payload: {
       accountStatus: AdminAccountStatuses.PasswordInvalid,
@@ -48,7 +50,7 @@ const mockOptions: LoginMockOption[] = [
   {
     id: 'login-account-error',
     title: '账号不存在',
-    description: '管理员账号未找到，返回 AdminLoginResponse 失败结果并在表单下方显示错误提示。',
+    description: '账号未找到，返回失败结果并在表单下方显示错误提示。',
     badge: 'error',
     payload: {
       accountStatus: AdminAccountStatuses.NotFound,
@@ -60,13 +62,14 @@ const mockOptions: LoginMockOption[] = [
 export default function AdminLogin() {
   const navigate = useNavigate()
   const { openMockDialog } = useMockSystem()
+  const setSession = useAdminSession((state) => state.setSession)
 
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const handleMockResult = (option: LoginMockOption) => {
+  const handleMockResult = (option: LoginMockOption, loginName: string) => {
     setIsSubmitting(false)
 
     const response = option.payload
@@ -76,6 +79,7 @@ export default function AdminLogin() {
 
     if (response.accountStatus === AdminAccountStatuses.Active) {
       setErrorMessage('')
+      setSession(loginName)
       navigate(response.redirectTo)
       return
     }
@@ -89,7 +93,7 @@ export default function AdminLogin() {
     }
 
     if (!request.credentials.isComplete) {
-      setErrorMessage('请输入用户名和密码。')
+      setErrorMessage('请输入你的 AuthorDNA ID 和密码。')
       return
     }
 
@@ -100,12 +104,12 @@ export default function AdminLogin() {
       pageName,
       route,
       componentName: '登录按钮',
-      interactionName: '管理员登录',
+      interactionName: 'AuthorDNA 登录',
       title: '选择登录处理结果',
-      description: '模拟管理员提交账号密码后的不同验证结果。',
+      description: '模拟用户提交 AuthorDNA 账号密码后的不同验证结果。',
       prioritySuggestion: '优先确认登录成功后的跳转，以及账号或密码错误时的提示文案。',
       options: mockOptions,
-      onSelect: handleMockResult,
+      onSelect: (option) => handleMockResult(option, request.credentials.username),
     })
   }
 
@@ -113,29 +117,29 @@ export default function AdminLogin() {
     {
       id: 'enter-submit',
       label: '回车提交登录',
-      description: '模拟管理员在密码输入框中按回车键提交表单。',
+      description: '模拟在密码输入框中按回车键提交表单。',
       dialog: {
         pageName,
         route,
         eventName: '回车提交登录',
-        interactionName: '键盘回车触发登录',
+        interactionName: '键盘回车触发 AuthorDNA 登录',
         title: '选择回车提交结果',
         description: '模拟按下回车键后，以 AdminLoginRequest 提交登录并返回对应的 AdminLoginResponse。',
         options: mockOptions,
-        onSelect: (option) => handleMockResult(option as LoginMockOption),
+        onSelect: (option) => handleMockResult(option as LoginMockOption, username),
       },
     },
     {
       id: 'session-expired',
       label: '登录状态失效',
-      description: '模拟管理员因会话失效返回登录页后的错误提示。',
+      description: '模拟用户因会话失效返回登录页后的错误提示。',
       dialog: {
         pageName,
         route,
         eventName: '登录状态失效',
         interactionName: '页面级异常提示',
         title: '选择状态失效后的页面反馈',
-        description: '模拟管理员被要求重新登录时的提示信息。',
+        description: '模拟用户被要求重新登录时的提示信息。',
         options: [
           {
             id: 'session-expired-message',
@@ -160,7 +164,7 @@ export default function AdminLogin() {
 
   return (
     <main className="relative min-h-screen overflow-hidden" style={{ background: 'var(--app-bg-gradient)' }}>
-      <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.56),transparent_42%,rgba(15,23,42,0.04)_100%)]" />
+      <div className="absolute inset-0 bg-gradient-background" />
       <div className="absolute inset-x-0 top-0 h-72 opacity-70" style={{ background: 'var(--app-top-gradient)' }} />
 
       <FloatingPageTools
@@ -168,40 +172,43 @@ export default function AdminLogin() {
         onEventSelect={(event) => openMockDialog(event.dialog)}
       />
 
+      <FloatingThemeToggle />
+
       <section className="relative mx-auto flex min-h-screen w-full max-w-6xl items-center justify-center px-6 py-16 sm:px-8 lg:px-12">
-        <div className="grid w-full max-w-4xl items-center gap-8 lg:grid-cols-[1fr_0.95fr]">
+        <div className="grid w-full max-w-5xl items-center gap-8 lg:grid-cols-[1.05fr_0.95fr]">
           <div className="hidden lg:block">
-            <div className="max-w-md space-y-4">
-              <div className="inline-flex items-center gap-3 rounded-full border border-white/70 bg-white/75 px-4 py-2 text-sm text-slate-600 shadow-[0_12px_30px_rgba(15,23,42,0.08)] backdrop-blur">
-                <BookOpenText className="size-4 text-slate-700" />
-                管理员身份验证
+            <div className="max-w-md space-y-6">
+              <div className="inline-flex items-center gap-3 rounded-full border border-foreground/5 bg-foreground/10 px-4 py-2 text-sm text-foreground shadow-[0_12px_30px_rgba(15,23,42,0.08)] backdrop-blur">
+                <Sparkles className="size-4 text-brand" />
+                AuthorDNA Access
               </div>
               <div className="space-y-4">
-                <h1 className="text-4xl font-semibold tracking-tight text-slate-900">
-                  图书馆管理系统 - 管理员登录
+                <h1 className="font-serif text-4xl font-semibold tracking-tight text-foreground">
+                  Login to Your AuthorDNA Workspace
                 </h1>
-                <p className="text-base leading-7 text-slate-600">
-                  使用管理员账号进入图书馆管理后台。
+                <p className="text-base leading-7 text-foreground/50">
+                  Use your account to view, organize, and continue creating your personal AuthorDNA content.
                 </p>
               </div>
+              
             </div>
           </div>
 
-          <Card className="border-white/70 bg-white/82 py-0 shadow-[0_30px_80px_rgba(15,23,42,0.12)] backdrop-blur-xl">
-            <CardHeader className="gap-3 border-b border-slate-200/70 px-7 py-7 sm:px-8">
+          <Card className="border-foreground/10 bg-foreground/5 py-0 shadow-[0_30px_80px_rgba(15,23,42,0.12)] backdrop-blur-xl">
+            <CardHeader className="gap-4 px-7 pt-7 pb-2 sm:px-8">
               <div className="flex items-center gap-3 lg:hidden">
-                <div className="flex size-11 items-center justify-center rounded-2xl bg-slate-900 text-white shadow-sm">
-                  <BookOpenText className="size-5" />
+                <div className="flex size-11 items-center justify-center rounded-2xl bg-brand text-brand-foreground shadow-sm">
+                  <Sparkles className="size-5" />
                 </div>
                 <div>
-                  <CardTitle className="text-xl text-slate-900">图书馆管理系统 - 管理员登录</CardTitle>
+                  <CardTitle className="font-sans text-xl text-foreground">AuthorDNA Login</CardTitle>
                 </div>
               </div>
               <div className="hidden lg:block">
-                <CardTitle className="text-2xl text-slate-900">管理员登录</CardTitle>
+                <CardTitle className="font-sans text-2xl text-foreground">AuthorDNA Login</CardTitle>
               </div>
-              <CardDescription className="text-sm text-slate-500">
-                请输入用户名和密码
+              <CardDescription className="text-sm leading-6 text-foreground/50">
+                Enter your AuthorDNA ID and password to continue.
               </CardDescription>
             </CardHeader>
 
@@ -214,41 +221,41 @@ export default function AdminLogin() {
                 }}
               >
                 <div className="space-y-2">
-                  <Label htmlFor="admin-username" className="text-slate-700">
-                    用户名
+                  <Label htmlFor="admin-username" className="text-foreground">
+                    AuthorDNA ID
                   </Label>
                   <div className="relative">
-                    <UserRound className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate-400" />
+                    <UserRound className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-foreground/50" />
                     <Input
                       id="admin-username"
                       value={username}
-                      placeholder="请输入管理员用户名"
+                      placeholder="Enter your AuthorDNA ID"
                       autoComplete="username"
-                      className="h-11 rounded-xl border-slate-200 bg-white pl-10 text-slate-900 placeholder:text-slate-400 focus-visible:ring-slate-400"
+                      className="h-11 rounded-xl border-foreground/20 bg-card pl-10 text-foreground placeholder:text-foreground/50 focus-visible:ring-highlight/80"
                       onChange={(event) => setUsername(event.target.value)}
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="admin-password" className="text-slate-700">
-                    密码
+                  <Label htmlFor="admin-password" className="text-foreground">
+                    Password
                   </Label>
                   <div className="relative">
-                    <KeyRound className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate-400" />
+                    <KeyRound className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-foreground/50" />
                     <Input
                       id="admin-password"
                       type="password"
                       value={password}
-                      placeholder="请输入管理员密码"
+                      placeholder="Password here..."
                       autoComplete="current-password"
-                      className="h-11 rounded-xl border-slate-200 bg-white pl-10 text-slate-900 placeholder:text-slate-400 focus-visible:ring-slate-400"
+                      className="h-11 rounded-xl border-foreground/20 bg-card pl-10 text-foreground placeholder:text-foreground/50 focus-visible:ring-highlight/80"
                       onChange={(event) => setPassword(event.target.value)}
                     />
                   </div>
                 </div>
 
-                <div className="min-h-16">
+                <div className="min-h-2">
                   {errorMessage ? (
                     <Alert variant="destructive" className="rounded-2xl border-rose-200 bg-rose-50/90">
                       <AlertDescription className="text-sm text-rose-700">
@@ -261,19 +268,20 @@ export default function AdminLogin() {
                 <Button
                   type="submit"
                   size="lg"
-                  className="h-11 w-full rounded-xl bg-slate-900 text-base font-medium text-white hover:bg-slate-800"
+                  className="h-11 w-full rounded-xl bg-brand text-base font-medium text-white hover:bg-brand/90"
                   disabled={isSubmitting}
                 >
-                  登录
+                  Login to AuthorDNA
+                  <ArrowRight className="size-4" />
                 </Button>
 
                 <Button
                   type="button"
                   variant="link"
-                  className="h-auto w-full px-0 text-sm text-slate-500 hover:text-slate-800"
-                  onClick={() => navigate('/library/register')}
+                  className="h-auto w-full px-0 bg-transparent text-sm text-foreground/50 hover:text-foreground"
+                  onClick={() => navigate('/register')}
                 >
-                  没有账号？前往注册
+                  No AuthorDNA account? Sign up now
                 </Button>
               </form>
             </CardContent>
@@ -281,8 +289,8 @@ export default function AdminLogin() {
         </div>
       </section>
 
-      <footer className="relative pb-8 text-center text-sm text-slate-500">
-        Copyright © 2025 图书馆管理系统
+      <footer className="relative pb-8 text-center text-sm text-foreground/50">
+        Copyright © 2025 AuthorDNA
       </footer>
     </main>
   )

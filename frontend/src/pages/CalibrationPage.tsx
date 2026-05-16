@@ -139,11 +139,11 @@ export default function CalibrationPage({ onComplete }: { onComplete: () => void
   if (!dataset) {
     return (
       <div
-        className="flex h-screen flex-col overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(185,208,255,0.18),_transparent_40%),var(--app-bg-gradient)] text-foreground"
+        className="flex h-screen flex-col overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(185,208,255,0.18),_transparent_40%),var(--app-bg-gradient)] pt-16 text-foreground"
         style={{ backgroundImage: "var(--app-top-gradient), var(--app-bg-gradient)" }}
       >
         <AppHeader />
-        <main className="flex min-h-0 flex-1 items-center justify-center px-8 py-8">
+        <main className="flex min-h-0 flex-1 items-center justify-center overflow-hidden px-8 py-8">
           <div className="w-full max-w-2xl rounded-2xl border border-border bg-card p-8 shadow-soft">
             <div className="flex items-center gap-2 text-brand">
               <Activity className="h-4 w-4" />
@@ -167,11 +167,11 @@ export default function CalibrationPage({ onComplete }: { onComplete: () => void
 
   return (
     <div
-      className="flex h-screen flex-col overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(185,208,255,0.18),_transparent_40%),var(--app-bg-gradient)] text-foreground"
+      className="flex h-screen flex-col overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(185,208,255,0.18),_transparent_40%),var(--app-bg-gradient)] pt-16 text-foreground"
       style={{ backgroundImage: "var(--app-top-gradient), var(--app-bg-gradient)" }}
     >
       <AppHeader />
-      <main className="grid min-h-0 flex-1 grid-cols-[2fr_1fr]">
+      <main className="grid min-h-0 flex-1 grid-cols-[2fr_1fr] overflow-hidden">
         <section className="min-h-0 overflow-y-auto border-r border-border/60 px-8 py-8">
           <div className="mx-auto max-w-2xl space-y-6">
             <div className="flex items-center gap-2 text-brand">
@@ -225,7 +225,7 @@ export default function CalibrationPage({ onComplete }: { onComplete: () => void
           </div>
         </section>
 
-        <aside className="flex min-h-0 flex-col overflow-y-auto bg-card/80 p-6 backdrop-blur">
+        <aside className="flex min-h-0 flex-col overflow-y-auto bg-background/80 p-6 backdrop-blur">
           {rightMode === "actions" ? (
             <div className="flex flex-col gap-4">
               <div className="rounded-2xl border border-border bg-background p-4 shadow-soft">
@@ -234,19 +234,19 @@ export default function CalibrationPage({ onComplete }: { onComplete: () => void
                 <p className="mt-2 text-sm leading-relaxed text-ink-muted">{dataset.profile.voiceSummary}</p>
               </div>
 
-              <Button size="lg" className="w-full font-serif" onClick={onComplete}>
+              <Button size="lg" className="w-full font-sans" onClick={onComplete}>
                 <Check className="mr-2 h-4 w-4" />
-                Accept Analysis
+                Accept and Continue
               </Button>
 
               <Button
                 size="lg"
                 variant="outline"
-                className="w-full font-serif text-ink-muted"
+                className="w-full font-sans text-ink-muted"
                 onClick={handleRefine}
               >
                 <RotateCcw className="mr-2 h-4 w-4" />
-                Doesn't feel right
+                Discard and Reanalyze
               </Button>
 
               {refinedCount > 0 && (

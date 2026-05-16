@@ -10,7 +10,7 @@ export default function FileUploadPage() {
   const navigate = useNavigate();
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-background">
+    <div className="flex min-h-screen flex-col overflow-hidden bg-background pt-16">
       <AppHeader />
       <main className="flex min-h-0 flex-1 items-center justify-center px-4 py-12">
         <div className="w-full max-w-lg space-y-6">

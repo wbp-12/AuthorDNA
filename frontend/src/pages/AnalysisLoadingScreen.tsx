@@ -30,7 +30,7 @@ export default function AnalysisLoadingScreen() {
   const fileName = files[0]?.name ?? "";
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-background">
+    <div className="flex min-h-screen flex-col overflow-hidden bg-background pt-16">
       <AppHeader />
       <main className="flex min-h-0 flex-1 flex-col items-center justify-center px-4">
         <div className="flex flex-col items-center gap-8 text-center">

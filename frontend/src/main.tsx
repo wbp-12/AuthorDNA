@@ -9,7 +9,22 @@ import { router } from '@/router'
 
 import './index.css'
 
+function ensureFontStylesheet() {
+  const href = `${import.meta.env.BASE_URL}fonts/inter.css`
+
+  if (document.querySelector(`link[data-author-dna-fonts="inter"]`)) {
+    return
+  }
+
+  const link = document.createElement('link')
+  link.rel = 'stylesheet'
+  link.href = href
+  link.dataset.authorDnaFonts = 'inter'
+  document.head.append(link)
+}
+
 initializeTheme()
+ensureFontStylesheet()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

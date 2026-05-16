@@ -119,7 +119,7 @@ export function MockSystemProvider({ children }: { children: ReactNode }) {
       ) : null}
       {notice && notice.tone === 'error' ? (
         <div className="pointer-events-none fixed bottom-8 left-1/2 z-[18] w-full max-w-md -translate-x-1/2 px-4">
-          <div className="rounded-full border border-rose-200 bg-white/95 px-4 py-3 text-center text-sm text-rose-700 shadow-[0_18px_40px_rgba(15,23,42,0.12)] backdrop-blur">
+          <div className="rounded-full border border-destructive/20 bg-card/95 px-4 py-3 text-center text-sm text-destructive shadow-[0_18px_40px_rgba(15,23,42,0.12)] backdrop-blur">
             {notice.message}
           </div>
         </div>
@@ -128,8 +128,8 @@ export function MockSystemProvider({ children }: { children: ReactNode }) {
         <div
           className={cn(
             'fixed right-4 bottom-4 z-[18] max-w-[min(420px,calc(100vw-2rem))] rounded-2xl border px-4 py-3 shadow-lg backdrop-blur',
-            notice.tone === 'success' && 'border-emerald-200 bg-emerald-50 text-emerald-900',
-            notice.tone === 'info' && 'border-border bg-white/95 text-foreground',
+            notice.tone === 'success' && 'border-emerald-200 bg-card text-foreground',
+            notice.tone === 'info' && 'border-border bg-card/95 text-foreground',
           )}
         >
           {notice.message}

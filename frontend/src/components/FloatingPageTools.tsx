@@ -43,7 +43,7 @@ export function FloatingPageTools<TEventOption extends MockResultOption = MockRe
             className="fixed inset-0 z-[18] cursor-default bg-transparent"
             onClick={() => setActiveToolPanel(null)}
           />
-          <Card className="fixed left-[4.75rem] top-1/2 z-[19] w-[min(380px,calc(100vw-6rem))] -translate-y-1/2 border bg-white/95 shadow-xl backdrop-blur max-sm:bottom-[5.75rem] max-sm:left-4 max-sm:right-4 max-sm:top-auto max-sm:w-auto max-sm:translate-y-0">
+          <Card className="fixed left-[4.75rem] top-1/2 z-[19] w-[min(380px,calc(100vw-6rem))] -translate-y-1/2 border border-border bg-card/95 shadow-xl backdrop-blur max-sm:bottom-[5.75rem] max-sm:left-4 max-sm:right-4 max-sm:top-auto max-sm:w-auto max-sm:translate-y-0">
             <CardHeader className="flex flex-row items-start justify-between gap-3 p-5 pb-3">
               <div className="space-y-1">
                 <CardDescription>页面事件</CardDescription>

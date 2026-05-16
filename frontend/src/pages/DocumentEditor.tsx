@@ -67,20 +67,70 @@ function normalizeForMatch(value: string) {
     .trim();
 }
 
+function getSuggestionExcerpt(suggestion: SuggestionItem) {
+  const excerpt = suggestion.excerpt?.trim();
+  const targetText = suggestion.targetText?.trim();
+
+  if (excerpt && targetText) {
+    const normalizedExcerpt = normalizeForMatch(excerpt);
+    const normalizedTarget = normalizeForMatch(targetText);
+    if (normalizedTarget.includes(normalizedExcerpt) || normalizedExcerpt.includes(normalizedTarget)) {
+      return excerpt;
+    }
+  }
+
+  if (excerpt) {
+    return excerpt;
+  }
+
+  if (targetText) {
+    return targetText.length > 96 ? `${targetText.slice(0, 93)}...` : targetText;
+  }
+
+  return suggestion.proposedPreview ?? suggestion.proposed;
+}
+
 function findSentenceIndexForSuggestion(paragraphSentences: string[], suggestion: SuggestionItem) {
-  const normalizedTarget = normalizeForMatch(suggestion.targetText ?? suggestion.excerpt ?? "");
+  const normalizedTarget = normalizeForMatch(suggestion.targetText ?? "");
   const normalizedExcerpt = normalizeForMatch(suggestion.excerpt ?? "");
 
-  const exactMatchIndex = paragraphSentences.findIndex((sentence) => {
-    const normalizedSentence = normalizeForMatch(sentence);
-    return (
-      normalizedSentence.includes(normalizedTarget) ||
-      normalizedTarget.includes(normalizedSentence) ||
-      (normalizedExcerpt ? normalizedSentence.includes(normalizedExcerpt) : false)
-    );
+  const candidates = new Set<string>();
+  if (normalizedTarget) {
+    candidates.add(normalizedTarget);
+    const words = normalizedTarget.split(" ").filter(Boolean);
+    for (let length = Math.min(words.length, 10); length >= 3; length -= 1) {
+      candidates.add(words.slice(0, length).join(" "));
+    }
+  }
+  if (normalizedExcerpt) {
+    candidates.add(normalizedExcerpt);
+  }
+
+  for (const candidate of candidates) {
+    const exactMatchIndex = paragraphSentences.findIndex((sentence) => {
+      const normalizedSentence = normalizeForMatch(sentence);
+      return normalizedSentence.includes(candidate) || candidate.includes(normalizedSentence);
+    });
+
+    if (exactMatchIndex >= 0) {
+      return exactMatchIndex;
+    }
+  }
+
+  const targetWords = new Set(normalizedTarget.split(" ").filter(Boolean));
+  let bestIndex = 0;
+  let bestScore = -1;
+
+  paragraphSentences.forEach((sentence, index) => {
+    const words = normalizeForMatch(sentence).split(" ").filter(Boolean);
+    const score = words.reduce((sum, word) => sum + (targetWords.has(word) ? 1 : 0), 0);
+    if (score > bestScore) {
+      bestScore = score;
+      bestIndex = index;
+    }
   });
 
-  return exactMatchIndex >= 0 ? exactMatchIndex : 0;
+  return bestIndex;
 }
 
 type DiffToken = {
@@ -859,7 +909,7 @@ export default function InfluenceDashboard() {
   const suggestions = dataset?.suggestions ?? [];
   const documentTitle = dataset?.document.title ?? "Writing in the age of AI";
   const documentParagraphs = dataset?.document.paragraphs ?? [];
-  const sampleText = documentParagraphs.join("\n\n");
+  const sampleText = dataset?.sampleText ?? documentParagraphs.join("\n\n");
 
   const overall = useMemo(
     () => (metrics.length > 0 ? Math.round(metrics.reduce((s, m) => s + m.score, 0) / metrics.length) : 0),
@@ -1124,7 +1174,7 @@ export default function InfluenceDashboard() {
   };
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-background">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-background pt-16">
       <AppHeader title={documentTitle} showBrandIcon={false}>
         <div className="hidden md:flex items-center gap-2">
           <div className="rounded-full border border-border bg-background p-1 text-[11px] text-ink-muted shadow-sm">
@@ -1327,15 +1377,6 @@ export default function InfluenceDashboard() {
                                         {!state ? (
                                           <>
                                             {(() => {
-                                              const proposedSentence = buildProposedSentencePreview(
-                                                item.sentence,
-                                                item.suggestions,
-                                                suggestion,
-                                                resolved,
-                                                acceptedOverrides,
-                                                sentenceSuggestionIndex.rangeById,
-                                              );
-
                                               return (
                                                 <div
                                                   onMouseEnter={() => {
@@ -1354,7 +1395,9 @@ export default function InfluenceDashboard() {
                                                   )}
                                                 >
                                                   <div className="mb-1 text-[10px] uppercase tracking-wider text-ink-muted">Proposed</div>
-                                                  <p className="font-serif text-[13px] leading-relaxed text-ink">{proposedSentence}</p>
+                                                  <p className="font-serif text-[13px] leading-relaxed text-ink">
+                                                    {suggestion.proposed}
+                                                  </p>
                                                 </div>
                                               );
                                             })()}
@@ -1549,7 +1592,7 @@ export default function InfluenceDashboard() {
         </section>
 
         {/* RIGHT — Influence Index + Suggestions */}
-        <aside className="min-h-0 overflow-y-auto border-l border-border bg-card">
+        <aside className="min-h-0 overflow-y-auto border-l border-border bg-background/80">
           {/* Influence Index */}
           <div className="border-b border-border p-5">
             <div className="mb-4 flex items-center justify-between gap-3">
@@ -1739,7 +1782,7 @@ export default function InfluenceDashboard() {
                         </span>
                       )}
                     </div>
-                    <p className="mb-2 line-clamp-2 text-xs italic text-ink-muted">"{s.excerpt}"</p>
+                    <p className="mb-2 line-clamp-2 text-xs italic text-ink-muted">"{getSuggestionExcerpt(s)}"</p>
                     <p className="mb-2.5 text-xs text-ink">{s.observation}</p>
 
                     <div

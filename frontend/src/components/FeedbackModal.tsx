@@ -47,7 +47,7 @@ export function FeedbackModal({ request, isSubmitting, onClose, onSubmit }: Feed
           id="agent-feedback"
           rows={6}
           value={text}
-          className="min-h-[140px] resize-y rounded-[18px] bg-white/95 px-4 py-4 text-[var(--text-strong)] shadow-none"
+          className="min-h-[140px] resize-y rounded-[18px] bg-background/95 px-4 py-4 text-foreground shadow-none"
           placeholder="例如：登录成功后还缺少一个跳转到馆员总控台的分支，建议补一个工作台页面的模拟结果。"
           onChange={(event) => setText(event.target.value)}
         />

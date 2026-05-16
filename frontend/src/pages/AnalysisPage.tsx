@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import AnalysisLoadingScreen from "./AnalysisLoadingScreen";
 import CalibrationPage from "./CalibrationPage";
-import AuthorDnaNegotiation from "./AuthorDnaNegotiation";
+import DocumentEditor from "@/pages/DocumentEditor";
 
 type Phase = "loading" | "calibration" | "dashboard";
 
@@ -17,8 +17,10 @@ export default function AnalysisPage() {
   if (phase === "calibration") return <CalibrationPage onComplete={() => setPhase("dashboard")} />;
 
   return (
-    <div className="animate-in fade-in duration-500">
-      <AuthorDnaNegotiation />
+    <div className="flex h-screen flex-col overflow-hidden animate-in fade-in duration-500">
+      <div className="min-h-0 flex-1 overflow-hidden">
+        <DocumentEditor />
+      </div>
     </div>
   );
 }

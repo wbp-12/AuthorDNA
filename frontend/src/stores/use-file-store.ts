@@ -17,6 +17,20 @@ type FileStore = {
 
 export const fileObjectMap = new Map<string, File>();
 
+function createFileId() {
+  const randomUuid = globalThis.crypto?.randomUUID?.();
+
+  if (randomUuid) {
+    return randomUuid;
+  }
+
+  const randomBytes = new Uint8Array(16);
+  globalThis.crypto?.getRandomValues?.(randomBytes);
+
+  const hex = Array.from(randomBytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
+  return `file-${Date.now().toString(36)}-${hex || Math.random().toString(36).slice(2)}`;
+}
+
 export const useFileStore = create<FileStore>()((set, get) => ({
   files: [],
   addFiles: (newFiles: File[]) => {
@@ -30,7 +44,7 @@ export const useFileStore = create<FileStore>()((set, get) => ({
     const added: UploadedFileInfo[] = [];
 
     for (const file of filesToAdd) {
-      const id = crypto.randomUUID();
+      const id = createFileId();
       fileObjectMap.set(id, file);
       added.push({
         id,
